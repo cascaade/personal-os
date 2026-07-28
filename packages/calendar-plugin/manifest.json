@@ -1,0 +1,9 @@
+{
+    "id": "cascaades-calendar-plugin",
+    "name": "Calendar Plugin",
+    "version": "0.0.0",
+    "minAppVersion": "0.0.0",
+    "description": "Calendar display",
+    "author": "cascaade",
+    "isDesktopOnly": true
+}
