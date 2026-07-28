@@ -1,6 +1,6 @@
 {
     "name": "cascaades-calendar-plugin",
-    "version": "0.0.0",
+    "version": "1.0.0",
     "description": "Calendar display",
     "main": "main.js",
     "type": "module",
