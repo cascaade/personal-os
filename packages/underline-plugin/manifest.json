@@ -1,0 +1,9 @@
+{
+    "id": "cascaades-underline-plugin",
+    "name": "Underline Plugin",
+    "version": "1.0.2",
+    "minAppVersion": "1.0.0",
+    "description": "Adds html underlines at selection",
+    "author": "cascaade",
+    "isDesktopOnly": true
+}
