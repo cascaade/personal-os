@@ -1,5 +1,21 @@
+:root {
+    --cascaades-calendar-accent: #ff6b9d;
+}
+
 .view-content:has(.calendar-view) {
     padding: 0;
+}
+
+.workspace-tab-header[data-type="calendar-view"] .workspace-tab-header-inner-icon {
+    color: var(--cascaades-calendar-accent) !important;
+}
+
+.calendar-ribbon-icon {
+    color: var(--cascaades-calendar-accent);
+
+    &:hover, &:active {
+        color: var(--cascaades-calendar-accent) !important;
+    }
 }
 
 .calendar-view {

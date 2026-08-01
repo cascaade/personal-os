@@ -31,9 +31,11 @@ export default class CalendarPlugin extends Plugin {
             await this.app.workspace.revealLeaf(leaf);
         }
 
-        this.addRibbonIcon('calendar-check', 'Sample', async (_evt: MouseEvent) => {
+        const ribbonIcon = this.addRibbonIcon('calendar-check', 'Open calendar', async (_evt: MouseEvent) => {
             await openCalendar();
         });
+
+        ribbonIcon.addClass("calendar-ribbon-icon");
 
         this.addCommand({
             id: "open-calendar",
