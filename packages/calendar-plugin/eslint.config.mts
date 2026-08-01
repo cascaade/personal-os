@@ -1,6 +1,7 @@
 import obsidianmd from 'eslint-plugin-obsidianmd';
 import globals from 'globals';
 import { defineConfig, globalIgnores } from 'eslint/config';
+import path from "node:path";
 
 export default defineConfig(
     globalIgnores([
@@ -25,6 +26,9 @@ export default defineConfig(
                 },
                 tsconfigRootDir: import.meta.dirname,
                 extraFileExtensions: [ '.json' ],
+                alias: {
+                    "@/*": path.resolve("src"),
+                },
             },
         },
     },

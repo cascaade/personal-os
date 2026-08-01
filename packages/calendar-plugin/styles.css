@@ -1,8 +1,81 @@
-/*
+.view-content:has(.calendar-view) {
+    padding: 0;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.calendar-view {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 
-If your plugin does not need CSS, delete this file.
+    --calendar-table-border: 1px solid var(--background-modifier-border);
+}
 
-*/
+.calendar-header {
+    z-index: 10;
+    padding: 0 var(--size-4-12);
+    box-sizing: border-box;
+}
+
+.calendar-banner {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--size-4-3) var(--size-4-1);
+}
+
+.calendar-labels {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-table {
+    flex: 1;
+    width: 100%;
+
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    overflow: auto;
+
+    padding: 0 var(--size-4-12) var(--size-4-8);
+}
+
+.calendar-label {
+    color: var(--text-faint);
+    border-bottom: var(--calendar-table-border);
+    text-align: center;
+    padding: var(--size-4-1) var(--size-4-2);
+}
+
+.calendar-day {
+    border: var(--calendar-table-border);
+    border-top: none;
+    border-right: none;
+
+    padding: var(--size-2-2) var(--size-4-2);
+
+    min-height: 120px;
+}
+
+.calendar-day:nth-child(7n) {
+    border-right: var(--calendar-table-border);
+    background-color: var(--background-primary-alt);
+}
+
+.calendar-day:nth-child(7n + 1) {
+    background-color: var(--background-primary-alt);
+}
+
+.day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-flow: row-reverse;
+}
+
+.day-number {
+    color: var(--text-muted);
+}
+
+.day-options {
+    color: var(--text-faint);
+}
