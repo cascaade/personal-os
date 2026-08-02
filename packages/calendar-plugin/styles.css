@@ -46,13 +46,18 @@
 
 .calendar-table {
     flex: 1;
-    width: 100%;
-
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
 
     padding: 0 var(--size-4-12) var(--size-4-8);
+}
+
+.calendar-month-section {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+
+    margin: 0;
+    padding: 0;
 }
 
 .calendar-label {
@@ -89,7 +94,11 @@
 }
 
 .day-number {
-    color: var(--text-muted);
+    color: var(--text-faint);
+
+    &.this-month {
+        color: var(--text-muted);
+    }
 }
 
 .day-options {
