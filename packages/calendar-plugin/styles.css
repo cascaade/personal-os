@@ -141,12 +141,11 @@
 
 .day-number-container {
     color: var(--text-faint);
+    &.this-month { color: var(--text-muted); }
 
     z-index: 1;
 
-    &.this-month {
-        color: var(--text-muted);
-    }
+    transition: color .3s ease;
 
     &.today{
         .day-number {

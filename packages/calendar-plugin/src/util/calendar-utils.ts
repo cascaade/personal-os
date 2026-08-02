@@ -59,6 +59,10 @@ class CalendarResolver {
             const from = new Date(schedule.effective_from);
             const to = new Date(schedule.effective_to);
 
+            from.setHours(0, 0, 0, 0);
+            to.setHours(0, 0, 0, 0);
+            to.setDate(to.getDate() + 1);
+
             return date >= from && date <= to;
         }) as Schedule;
 
