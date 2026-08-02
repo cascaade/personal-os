@@ -93,6 +93,11 @@
     flex-flow: row-reverse;
 }
 
+.day-type {
+    font-size: .8em;
+    color: var(--text-faint);
+}
+
 .day-number-container {
     color: var(--text-faint);
 

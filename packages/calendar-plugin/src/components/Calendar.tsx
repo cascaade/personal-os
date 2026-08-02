@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Day from "@/components/Day";
 import { addMonths, CalendarFillMode, DAYS_OF_WEEK_TRUNC, getCalendarDays, LoadedMonth } from "@/util/date-utils";
+import { calendarResolver } from "@/util/calendar-utils";
 
 const MIN_ROW_HEIGHT = 120;
 
@@ -97,8 +98,6 @@ export function Calendar() {
             if (!initialized.current) {
                 return;
             }
-
-            const top = container.getBoundingClientRect().top;
 
             let current = 0;
             let bestScore = -1;
@@ -216,7 +215,7 @@ export function Calendar() {
                         {getCalendarDays(month, fillMode).map((date) => (
                             <Day
                                 key={date.toISOString()}
-                                date={date}
+                                dayInfo={calendarResolver.get(date)}
                                 thisMonth={
                                     date.getFullYear() === visibleMonth?.month.getFullYear() &&
                                     date.getMonth() === visibleMonth?.month.getMonth()
