@@ -21,7 +21,7 @@ export type DayInfo = {
     dayType: string | null;
 
     extraneous?: {
-        label: string;
+        type: string;
         title: string;
     }
 
@@ -80,10 +80,10 @@ class CalendarResolver {
         if (override) {
             return {
                 date,
-                blocks: [],
-                dayType: override.type,
+                blocks: schedule.day_registry.find(s => s.id == override.schedule)?.block_schedule ?? [],
+                dayType: override.label,
                 extraneous: {
-                    label: override.label,
+                    type: override.type,
                     title: override.title,
                 }
             };

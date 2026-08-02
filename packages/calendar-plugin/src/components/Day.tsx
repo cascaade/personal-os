@@ -9,7 +9,7 @@ export interface DayProps {
 }
 
 export default function Day({ dayInfo, thisMonth }: DayProps) {
-    return (<div className="calendar-day">
+    return (<div className={ concat("calendar-day", dayInfo.extraneous?.type) }>
         <div className="day-header">
             <div className={concat("day-number-container", thisMonth && "this-month", dayInfo.date.toDateString() == new Date().toDateString() && "today")}>
                 {dayInfo.date.getDate() == 1 && MONTHS_OF_YEAR_TRUNC[dayInfo.date.getMonth()] + " "}
@@ -19,15 +19,15 @@ export default function Day({ dayInfo, thisMonth }: DayProps) {
                     {dayInfo.date.getDate()}
                 </span>
             </div>
-            <span className="day-type">
-                {(!dayInfo.extraneous) && dayInfo.dayType}
+            <span className={ concat("day-type") }>
+                {dayInfo.dayType}
             </span>
             <div className="day-options">
             {/*    0/1*/}
             </div>
         </div>
         <div className="day-container">
-
+            {/*{JSON.stringify(dayInfo, null, 2)}*/}
         </div>
     </div>);
 }

@@ -96,7 +96,48 @@
 .day-type {
     font-size: .8em;
     color: var(--text-faint);
+    padding: var(--size-2-1) var(--size-2-2);
+    line-height: 1;
+    white-space: nowrap;
+    border-radius: var(--radius-s);
 }
+
+/* ALL EXTRANEOUS */
+
+.calendar-day.day_off {
+    background: repeating-linear-gradient(
+            315deg,
+            transparent,
+            transparent 8px,
+            rgba(255, 255, 0, 0.1) 8px,
+            rgba(255, 255, 0, 0.1) 12px
+    );
+
+    .day-type {
+        background: rgb(89 89 0);
+        color: var(--text-normal);
+    }
+}
+
+.calendar-day.early_dismissal {
+    background: none;
+
+    .day-type {
+        background: rgb(89 89 0);
+        color: var(--text-normal);
+    }
+}
+
+.calendar-day.early_dismissal_check {
+    background: none;
+
+    .day-type {
+        background: rgb(89 25 0);
+        color: var(--text-normal);
+    }
+}
+
+/* END EXTRANEOUS */
 
 .day-number-container {
     color: var(--text-faint);
