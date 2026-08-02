@@ -93,11 +93,42 @@
     flex-flow: row-reverse;
 }
 
-.day-number {
+.day-number-container {
     color: var(--text-faint);
+
+    z-index: 1;
 
     &.this-month {
         color: var(--text-muted);
+    }
+
+    &.today{
+        .day-number {
+            color: var(--text-on-accent);
+            position: relative;
+            margin-left: var(--size-2-2);
+        }
+
+        .day-number::before {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            content: "";
+            z-index: -4;
+
+            width: 1em;
+            height: 1em;
+            border-radius: 50%;
+            padding: var(--size-2-1);
+
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+
+            background-color: var(--color-accent);
+        }
     }
 }
 

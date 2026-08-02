@@ -10,12 +10,14 @@ export interface DayProps {
 export default function Day({ date, thisMonth }: DayProps) {
     return (<div className="calendar-day">
         <div className="day-header">
-            <span className={ concat(
-                "day-number",
-                thisMonth && "this-month"
-            ) }>
-                {date.getDate() == 1 && MONTHS_OF_YEAR_TRUNC[date.getMonth()]} {date.getDate()}
-            </span>
+            <div className={concat("day-number-container", thisMonth && "this-month", date.toDateString() == new Date().toDateString() && "today")}>
+                {date.getDate() == 1 && MONTHS_OF_YEAR_TRUNC[date.getMonth()] + " "}
+                <span className={ concat(
+                    "day-number"
+                ) }>
+                    {date.getDate()}
+                </span>
+            </div>
             {/*<div className="day-options">*/}
             {/*    0/1*/}
             {/*</div>*/}

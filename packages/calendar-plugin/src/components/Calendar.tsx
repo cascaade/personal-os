@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import Day from "@/components/Day";
 import { addMonths, CalendarFillMode, DAYS_OF_WEEK_TRUNC, getCalendarDays, LoadedMonth } from "@/util/date-utils";
 
+const MIN_ROW_HEIGHT = 120;
+
 export function Calendar() {
     const [months, setMonths] = useState<LoadedMonth[]>(() => {
         const first = new Date();
@@ -69,7 +71,7 @@ export function Calendar() {
             const monthRect = monthEl.getBoundingClientRect();
 
             const relativeTop = monthRect.top - containerRect.top + container.scrollTop;
-            const target = relativeTop - (container.clientHeight - 60 - monthEl.offsetHeight) / 2;
+            const target = relativeTop - (container.clientHeight - MIN_ROW_HEIGHT - monthEl.offsetHeight) / 2; // offset for perception
 
             if (smooth) {
                 container.scrollTo({
@@ -102,7 +104,7 @@ export function Calendar() {
             let bestScore = -1;
 
             const viewportTop = container.getBoundingClientRect().top;
-            const viewportBottom = container.getBoundingClientRect().bottom - 120; // offset for preception
+            const viewportBottom = container.getBoundingClientRect().bottom - MIN_ROW_HEIGHT; // offset for preception
 
             monthRefs.current.forEach((el, index) => {
                 if (!el) return;
