@@ -13,31 +13,31 @@ export function Calendar() {
         return [
             {
                 month: addMonths(first, -3),
-                fillMode: CalendarFillMode.LEADING,
+                fillMode: CalendarFillMode.TRAILING,
             },
             {
                 month: addMonths(first, -2),
-                fillMode: CalendarFillMode.LEADING,
+                fillMode: CalendarFillMode.TRAILING,
             },
             {
                 month: addMonths(first, -1),
-                fillMode: CalendarFillMode.LEADING,
+                fillMode: CalendarFillMode.TRAILING,
             },
             {
                 month: first,
-                fillMode: CalendarFillMode.BOTH,
+                fillMode: CalendarFillMode.NONE,
             },
             {
                 month: addMonths(first, 1),
-                fillMode: CalendarFillMode.TRAILING,
+                fillMode: CalendarFillMode.LEADING,
             },
             {
                 month: addMonths(first, 2),
-                fillMode: CalendarFillMode.TRAILING,
+                fillMode: CalendarFillMode.LEADING,
             },
             {
                 month: addMonths(first, 3),
-                fillMode: CalendarFillMode.TRAILING,
+                fillMode: CalendarFillMode.LEADING,
             },
         ];
     });
@@ -56,28 +56,36 @@ export function Calendar() {
         const container = scrollRef.current;
         if (!container) return;
 
+        const now = new Date();
+
         const currentIndex = months.findIndex(
             ({ month }) =>
-                month.getFullYear() === new Date().getFullYear() &&
-                month.getMonth() === new Date().getMonth()
+                month.getFullYear() === now.getFullYear() &&
+                month.getMonth() === now.getMonth()
         );
 
         if (currentIndex === -1) return;
 
         requestAnimationFrame(() => {
             const monthEl = monthRefs.current.get(currentIndex);
-            if (!monthEl || !container) return;
+            if (!monthEl) return;
 
             const containerRect = container.getBoundingClientRect();
             const monthRect = monthEl.getBoundingClientRect();
 
-            const relativeTop = monthRect.top - containerRect.top + container.scrollTop;
-            const target = relativeTop - (container.clientHeight - MIN_ROW_HEIGHT - monthEl.offsetHeight) / 2; // offset for perception
+            const relativeTop =
+                monthRect.top - containerRect.top + container.scrollTop;
+
+            const centeredTarget =
+                relativeTop -
+                (container.clientHeight - MIN_ROW_HEIGHT - monthEl.offsetHeight) / 2;
+
+            const target = Math.min(centeredTarget, relativeTop);
 
             if (smooth) {
                 container.scrollTo({
                     top: Math.max(0, target),
-                    behavior: 'smooth'
+                    behavior: "smooth",
                 });
             } else {
                 container.scrollTop = Math.max(0, target);
@@ -134,7 +142,7 @@ export function Calendar() {
                     ...prev,
                     {
                         month: addMonths(prev[prev.length - 1]!.month, 1),
-                        fillMode: CalendarFillMode.TRAILING,
+                        fillMode: CalendarFillMode.LEADING,
                     },
                 ]);
 
@@ -152,7 +160,7 @@ export function Calendar() {
                 setMonths(prev => [
                     {
                         month: addMonths(prev[0]!.month, -1),
-                        fillMode: CalendarFillMode.LEADING,
+                        fillMode: CalendarFillMode.TRAILING,
                     },
                     ...prev,
                 ]);
