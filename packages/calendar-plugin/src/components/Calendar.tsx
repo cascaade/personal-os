@@ -2,20 +2,20 @@ import { useContext, useEffect, useRef, useState } from "react";
 import Day from "@/components/Day";
 import { addMonths, CalendarFillMode, DAYS_OF_WEEK_TRUNC, getCalendarDays, LoadedMonth } from "@/util/date-utils";
 import { calendarResolver } from "@/services/CalendarResolver";
-import { Commitment } from "@/util/commitment-utils";
 import { ObsidianContext } from "@/views/CalendarView";
+import { Commitment } from "@/services/CommitmentsProvider";
 
 const MIN_ROW_HEIGHT = 120;
 
 export function Calendar() {
     const [commitments, setCommitments] = useState<Commitment[]>([]);
 
-    const { commitmentProvider } = useContext(ObsidianContext)!;
+    const { calendarContext } = useContext(ObsidianContext)!;
 
     useEffect(() => {
-        (async () =>  setCommitments(await commitmentProvider?.getAllCommitments() ?? []))()
+        (async () =>  setCommitments(await calendarContext.commitments?.getAllCommitments() ?? []))()
             .catch(() => null);
-    }, [commitmentProvider]);
+    }, [calendarContext.commitments]);
 
     const [months, setMonths] = useState<LoadedMonth[]>(() => {
         const first = new Date();
@@ -189,6 +189,35 @@ export function Calendar() {
         return () => container.removeEventListener("scroll", onScroll);
     }, [months]);
 
+    const [optionDown, setOptionDown] = useState(false);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Alt") {
+                setOptionDown(true);
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (e.key === "Alt") {
+                setOptionDown(false);
+            }
+        };
+
+        // Handles cases like alt-tabbing away while holding Option.
+        const handleBlur = () => setOptionDown(false);
+
+        window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener("keyup", handleKeyUp);
+        window.addEventListener("blur", handleBlur);
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("keyup", handleKeyUp);
+            window.removeEventListener("blur", handleBlur);
+        };
+    }, []);
+
     return (
         <div className="calendar-view">
             <div className="calendar-header">
@@ -240,6 +269,7 @@ export function Calendar() {
                                     date.getFullYear() === visibleMonth?.month.getFullYear() &&
                                     date.getMonth() === visibleMonth?.month.getMonth()
                                 }
+                                optionDown={optionDown}
                             />
                         ))}
                     </div>

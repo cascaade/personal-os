@@ -168,7 +168,7 @@ export function timeToMinutes(
         isPm = pmMode;
     } else {
         // Threshold comparison
-        const parsed = hours * 60 + minutes;
+        const parsed = (hours % 12) * 60 + minutes;
         isPm = parsed < pmMode;
     }
 

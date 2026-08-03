@@ -1,15 +1,16 @@
 import { concat } from "@/util/classname-utils";
 import { MONTHS_OF_YEAR_TRUNC } from "@/util/date-utils";
 import { DayInfo } from "@/util/schedule-utils";
-import { Commitment } from "@/util/commitment-utils";
+import { Commitment } from "@/services/CommitmentsProvider";
 
 export interface DayProps {
     dayInfo: DayInfo;
     thisMonth: boolean;
     commitments: Commitment[];
+    optionDown: boolean;
 }
 
-export default function Day({ dayInfo, thisMonth, commitments }: DayProps) {
+export default function Day({ dayInfo, thisMonth, commitments, optionDown }: DayProps) {
     return (<div className={ concat("calendar-day", dayInfo.extraneous?.type) }>
         <div className="day-header">
             <div className={concat("day-number-container", thisMonth && "this-month", dayInfo.date.toDateString() == new Date().toDateString() && "today")}>
@@ -29,10 +30,23 @@ export default function Day({ dayInfo, thisMonth, commitments }: DayProps) {
         </div>
         <div className="day-container">
             {
-                commitments.map(c => (
-                    <div className="commitment">
-                        {c.title}
-                    </div>
+                dayInfo.blocks.map((block, bi) => (
+                    ( () => {
+                        const cs = commitments.filter(c => c.class?.period == block.period || c.project?.class?.period == block.period);
+
+                        return (
+                            <div className={ concat("schedule-block") } key={bi}>
+                                <div className="block-header"><span className="period">{ block.period }</span> <span>{block.from}</span></div>
+                                {
+                                    cs.map((comm, ci) => (
+                                        <div className="commitment" key={ci}>
+                                            {comm.title}
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        )
+                    } )()
                 ))
             }
             {/*{JSON.stringify(dayInfo, null, 2)}*/}
