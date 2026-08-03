@@ -181,3 +181,33 @@ export function timeToMinutes(
 
     return hours * 60 + minutes;
 }
+
+export function minutesToTime(
+    totalMinutes: number,
+    twentyFourHour: boolean,
+    showAmPm: boolean
+): string {
+    if (
+        !Number.isInteger(totalMinutes) ||
+        totalMinutes < 0 ||
+        totalMinutes >= 24 * 60
+    ) {
+        throw new Error(`Invalid minutes: ${totalMinutes}`);
+    }
+
+    const hours24 = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    if (twentyFourHour) {
+        return `${hours24.toString().padStart(2, "0")}:${minutes
+            .toString()
+            .padStart(2, "0")}`;
+    }
+
+    const isPm = hours24 >= 12;
+    const hours12 = hours24 % 12 || 12;
+
+    return `${hours12}:${minutes
+        .toString()
+        .padStart(2, "0")}${showAmPm ? (isPm ? "p" : "a") : ""}`;
+}

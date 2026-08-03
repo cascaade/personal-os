@@ -5,19 +5,21 @@ type ClassFrontmatter = {
     type?: string;
     role?: string;
 
-    period?: number;
+    period?: string;
     subject?: string;
 
     school_year?: string;
     term?: string;
 }
 
-export type Class = ClassFrontmatter & {
+export type Class = Omit<ClassFrontmatter, "period"> & {
     type: "entity";
     role: "class";
 
     file: TFile;
     title: string;
+
+    period?: number;
 }
 
 export class ClassProvider {
@@ -31,14 +33,12 @@ export class ClassProvider {
         const fm = this.ctx.obsidian.getFrontmatter(file) as ClassFrontmatter;
         if (fm?.type !== "entity" || fm?.role !== "class") return null;
 
-        console.log(fm);
-
         return {
             type: "entity",
             role: "class",
             file: file,
             title: file.basename,
-            period: fm?.period,
+            period: fm?.period ? parseInt(fm?.period) : undefined,
             subject: fm?.subject,
             school_year: fm?.school_year,
             term: fm?.term,

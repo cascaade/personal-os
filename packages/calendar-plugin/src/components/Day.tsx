@@ -1,7 +1,9 @@
 import { concat } from "@/util/classname-utils";
-import { MONTHS_OF_YEAR_TRUNC } from "@/util/date-utils";
+import { minutesToTime, MONTHS_OF_YEAR_TRUNC } from "@/util/date-utils";
 import { DayInfo } from "@/util/schedule-utils";
 import { Commitment } from "@/services/CommitmentsProvider";
+import { useContext } from "react";
+import { ObsidianContext } from "@/views/CalendarView";
 
 export interface DayProps {
     dayInfo: DayInfo;
@@ -11,6 +13,8 @@ export interface DayProps {
 }
 
 export default function Day({ dayInfo, thisMonth, commitments, optionDown }: DayProps) {
+    const { settings } = useContext(ObsidianContext)!;
+
     return (<div className={ concat("calendar-day", dayInfo.extraneous?.type) }>
         <div className="day-header">
             <div className={concat("day-number-container", thisMonth && "this-month", dayInfo.date.toDateString() == new Date().toDateString() && "today")}>
@@ -36,7 +40,21 @@ export default function Day({ dayInfo, thisMonth, commitments, optionDown }: Day
 
                         return (
                             <div className={ concat("schedule-block") } key={bi}>
-                                <div className="block-header"><span className="period">{ block.period }</span> <span>{block.from}</span></div>
+                                <div className="block-header">
+                                    <span className="block-period">{ block.period }</span>
+                                    {" "}
+                                    <span className={"block-time"}>{
+                                        minutesToTime(
+                                            block.from,
+                                            settings.twentyFourHourDisplayTime,
+                                            settings.showAmPmDisplayTime
+                                        ) + " - " + minutesToTime(
+                                            block.to,
+                                            settings.twentyFourHourDisplayTime,
+                                            settings.showAmPmDisplayTime
+                                        )
+                                    }</span>
+                                </div>
                                 {
                                     cs.map((comm, ci) => (
                                         <div className="commitment" key={ci}>

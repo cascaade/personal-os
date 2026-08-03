@@ -3,10 +3,14 @@ import CalendarPlugin from './main';
 
 export interface CalendarSettings {
     mySetting: string;
+    twentyFourHourDisplayTime: boolean;
+    showAmPmDisplayTime: boolean;
 }
 
 export const DEFAULT_SETTINGS: CalendarSettings = {
     mySetting: 'default',
+    twentyFourHourDisplayTime: false,
+    showAmPmDisplayTime: false
 };
 
 export class CalendarSettingTab extends PluginSettingTab {
