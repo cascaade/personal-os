@@ -1,5 +1,8 @@
 :root {
     --cascaades-calendar-accent: #ff6b9d;
+    --schedule-color-bg: rgba(255, 255, 0, 0.1);
+    --schedule-color-accent: rgb(89 89 0);
+    --error-color-accent: rgb(89 25 0);
 }
 
 .view-content:has(.calendar-view) {
@@ -72,7 +75,7 @@
     border-top: none;
     border-right: none;
 
-    padding: var(--size-2-2) var(--size-4-2);
+    padding: var(--size-4-1);
 
     min-height: 120px;
 }
@@ -91,6 +94,8 @@
     align-items: center;
     justify-content: space-between;
     flex-flow: row-reverse;
+
+    padding: 0 var(--size-4-1) var(--size-4-1);
 }
 
 .day-type {
@@ -109,12 +114,12 @@
             315deg,
             transparent,
             transparent 8px,
-            rgba(255, 255, 0, 0.1) 8px,
-            rgba(255, 255, 0, 0.1) 12px
+            var(--schedule-color-bg) 8px,
+            var(--schedule-color-bg) 12px
     );
 
     .day-type {
-        background: rgb(89 89 0);
+        background: var(--schedule-color-accent);
         color: var(--text-normal);
     }
 }
@@ -123,7 +128,7 @@
     background: none;
 
     .day-type {
-        background: rgb(89 89 0);
+        background: var(--schedule-color-accent);
         color: var(--text-normal);
     }
 }
@@ -132,7 +137,7 @@
     background: none;
 
     .day-type {
-        background: rgb(89 25 0);
+        background: var(--error-color-accent);
         color: var(--text-normal);
     }
 }
@@ -179,4 +184,11 @@
 
 .day-options {
     color: var(--text-faint);
+}
+
+.commitment {
+    background-color: var(--background-secondary-alt);
+    font-size: .9em;
+    padding: var(--size-2-1) var(--size-2-2);
+    border-radius: var(--radius-s);
 }

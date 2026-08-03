@@ -1,11 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import Day from "@/components/Day";
 import { addMonths, CalendarFillMode, DAYS_OF_WEEK_TRUNC, getCalendarDays, LoadedMonth } from "@/util/date-utils";
-import { calendarResolver } from "@/util/schedule-utils";
+import { calendarResolver } from "@/services/CalendarResolver";
+import { Commitment } from "@/util/commitment-utils";
+import { ObsidianContext } from "@/views/CalendarView";
 
 const MIN_ROW_HEIGHT = 120;
 
 export function Calendar() {
+    const [commitments, setCommitments] = useState<Commitment[]>([]);
+
+    const { commitmentProvider } = useContext(ObsidianContext)!;
+
+    useEffect(() => {
+        (async () =>  setCommitments(await commitmentProvider?.getAllCommitments() ?? []))()
+            .catch(() => null);
+    }, [commitmentProvider]);
+
     const [months, setMonths] = useState<LoadedMonth[]>(() => {
         const first = new Date();
         first.setDate(1);
@@ -224,6 +235,7 @@ export function Calendar() {
                             <Day
                                 key={date.toISOString()}
                                 dayInfo={calendarResolver.get(date)}
+                                commitments={commitments.filter(c => c.due?.toDateString() == date.toDateString())}
                                 thisMonth={
                                     date.getFullYear() === visibleMonth?.month.getFullYear() &&
                                     date.getMonth() === visibleMonth?.month.getMonth()

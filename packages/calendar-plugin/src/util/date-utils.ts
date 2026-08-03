@@ -13,6 +13,41 @@ export interface LoadedMonth {
     fillMode: CalendarFillMode;
 }
 
+export function parseLocalDate(value: string | Date): Date {
+    if (value instanceof Date) return value;
+
+    const [datePart, timePart] = value.split("T");
+
+    const [year, month, day] = datePart!.split("-").map(Number);
+
+    let hours = 0;
+    let minutes = 0;
+    let seconds = 0;
+    let milliseconds = 0;
+
+    if (timePart) {
+        const [time, fractional] = timePart.split(".");
+
+        [hours = 0, minutes = 0, seconds = 0] = time!
+            .split(":")
+            .map(Number);
+
+        if (fractional) {
+            milliseconds = Number(fractional.padEnd(3, "0").slice(0, 3));
+        }
+    }
+
+    return new Date(
+        year ?? 0,
+        (month ?? 0) - 1,
+        day,
+        hours,
+        minutes,
+        seconds,
+        milliseconds
+    );
+}
+
 export function getCalendarDays(
     month: Date,
     mode: CalendarFillMode = CalendarFillMode.BOTH
