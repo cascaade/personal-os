@@ -192,3 +192,11 @@
     padding: var(--size-2-1) var(--size-2-2);
     border-radius: var(--radius-s);
 }
+
+.calendar-month-section.option-down:hover .schedule-block.empty-block {
+    display: unset;
+}
+
+.schedule-block.empty-block {
+    display: none;
+}

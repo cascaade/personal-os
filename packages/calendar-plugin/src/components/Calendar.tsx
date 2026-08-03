@@ -4,6 +4,7 @@ import { addMonths, CalendarFillMode, DAYS_OF_WEEK_TRUNC, getCalendarDays, Loade
 import { calendarResolver } from "@/services/CalendarResolver";
 import { ObsidianContext } from "@/views/CalendarView";
 import { Commitment } from "@/services/CommitmentsProvider";
+import { concat } from "@/util/classname-utils";
 
 const MIN_ROW_HEIGHT = 120;
 
@@ -204,7 +205,6 @@ export function Calendar() {
             }
         };
 
-        // Handles cases like alt-tabbing away while holding Option.
         const handleBlur = () => setOptionDown(false);
 
         window.addEventListener("keydown", handleKeyDown);
@@ -244,13 +244,13 @@ export function Calendar() {
             </div>
 
             <div
-                className="calendar-table"
+                className={ concat("calendar-table") }
                 ref={scrollRef}
             >
                 {months.map(({ month, fillMode }, index) => (
                     <div
                         key={month.toISOString()}
-                        className="calendar-month-section"
+                        className={ concat("calendar-month-section", optionDown && "option-down") }
                         data-index={index}
                         ref={(el) => {
                             if (el) {
@@ -269,7 +269,6 @@ export function Calendar() {
                                     date.getFullYear() === visibleMonth?.month.getFullYear() &&
                                     date.getMonth() === visibleMonth?.month.getMonth()
                                 }
-                                optionDown={optionDown}
                             />
                         ))}
                     </div>

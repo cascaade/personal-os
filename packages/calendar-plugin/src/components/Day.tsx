@@ -9,10 +9,9 @@ export interface DayProps {
     dayInfo: DayInfo;
     thisMonth: boolean;
     commitments: Commitment[];
-    optionDown: boolean;
 }
 
-export default function Day({ dayInfo, thisMonth, commitments, optionDown }: DayProps) {
+export default function Day({ dayInfo, thisMonth, commitments }: DayProps) {
     const { settings } = useContext(ObsidianContext)!;
 
     return (<div className={ concat("calendar-day", dayInfo.extraneous?.type) }>
@@ -39,7 +38,7 @@ export default function Day({ dayInfo, thisMonth, commitments, optionDown }: Day
                         const cs = commitments.filter(c => c.class?.period == block.period || c.project?.class?.period == block.period);
 
                         return (
-                            <div className={ concat("schedule-block") } key={bi}>
+                            <div className={ concat("schedule-block", cs.length === 0 && "empty-block") } key={bi}>
                                 <div className="block-header">
                                     <span className="block-period">{ block.period }</span>
                                     {" "}
