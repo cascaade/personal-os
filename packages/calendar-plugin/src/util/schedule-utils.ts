@@ -123,7 +123,7 @@ class CalendarResolver {
         const dayOfWeek = date.getDay();
 
         // Ignore weekends
-        if (schedule.rotation.include_weekends && (dayOfWeek === 0 || dayOfWeek === 6)) {
+        if (!schedule.rotation.include_weekends && (dayOfWeek === 0 || dayOfWeek === 6)) {
             return {
                 date,
                 dayType: null,
@@ -155,7 +155,7 @@ class CalendarResolver {
                 weekday === 0 ||
                 weekday === 6;
 
-            if ((!schedule.rotation.include_weekends || !isWeekend) && !dayOffs.has(key)) {
+            if ((schedule.rotation.include_weekends || !isWeekend) && !dayOffs.has(key)) {
                 schoolDayCount++;
             }
 

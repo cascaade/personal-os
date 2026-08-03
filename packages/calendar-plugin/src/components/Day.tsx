@@ -27,7 +27,7 @@ export default function Day({ dayInfo, thisMonth }: DayProps) {
             </div>
         </div>
         <div className="day-container">
-            {JSON.stringify(dayInfo, null, 2)}
+            {/*{JSON.stringify(dayInfo, null, 2)}*/}
         </div>
     </div>);
 }
