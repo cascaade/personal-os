@@ -1,7 +1,7 @@
 import { JSX } from "react";
 import { concat } from "@/util/classname-utils";
 import { MONTHS_OF_YEAR_TRUNC } from "@/util/date-utils";
-import { DayInfo } from "@/util/calendar-utils";
+import { DayInfo } from "@/util/schedule-utils";
 
 export interface DayProps {
     dayInfo: DayInfo;
@@ -27,7 +27,7 @@ export default function Day({ dayInfo, thisMonth }: DayProps) {
             </div>
         </div>
         <div className="day-container">
-            {/*{JSON.stringify(dayInfo, null, 2)}*/}
+            {JSON.stringify(dayInfo, null, 2)}
         </div>
     </div>);
 }

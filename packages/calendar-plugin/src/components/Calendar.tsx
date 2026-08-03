@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Day from "@/components/Day";
 import { addMonths, CalendarFillMode, DAYS_OF_WEEK_TRUNC, getCalendarDays, LoadedMonth } from "@/util/date-utils";
-import { calendarResolver } from "@/util/calendar-utils";
+import { calendarResolver } from "@/util/schedule-utils";
 
 const MIN_ROW_HEIGHT = 120;
 

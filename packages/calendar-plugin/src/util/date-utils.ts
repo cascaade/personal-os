@@ -80,3 +80,69 @@ export function addMonths(date: Date, months: number): Date {
 
     return result;
 }
+
+/**
+ * Converts a time string into minutes since midnight.
+ *
+ * @param time "8:35", "12:22", "17:30", etc.
+ * @param pmMode
+ *   null    -> time is already 24-hour.
+ *   boolean -> true = PM, false = AM.
+ *   number  -> compare parsed time against this threshold.
+ *              If parsed minutes < threshold, treat as PM.
+ */
+export function timeToMinutes(
+    time: string,
+    pmMode: boolean | number | null
+): number {
+    const match = /^(\d{1,2}):(\d{2})$/.exec(time.trim());
+
+    if (!match) {
+        throw new Error(`Invalid time: "${time}"`);
+    }
+
+    let hours = Number(match[1]);
+    const minutes = Number(match[2]);
+
+    if (
+        Number.isNaN(hours) ||
+        Number.isNaN(minutes) ||
+        minutes < 0 ||
+        minutes > 59
+    ) {
+        throw new Error(`Invalid time: "${time}"`);
+    }
+
+    // 24-hour input
+    if (pmMode === null) {
+        if (hours < 0 || hours > 23) {
+            throw new Error(`Invalid 24-hour time: "${time}"`);
+        }
+
+        return hours * 60 + minutes;
+    }
+
+    // 12-hour validation
+    if (hours < 1 || hours > 12) {
+        throw new Error(`Invalid 12-hour time: "${time}"`);
+    }
+
+    let isPm: boolean;
+
+    if (typeof pmMode === "boolean") {
+        isPm = pmMode;
+    } else {
+        // Threshold comparison
+        const parsed = hours * 60 + minutes;
+        isPm = parsed < pmMode;
+    }
+
+    // Convert to 24-hour minutes
+    if (hours === 12) {
+        hours = isPm ? 12 : 0;
+    } else if (isPm) {
+        hours += 12;
+    }
+
+    return hours * 60 + minutes;
+}
