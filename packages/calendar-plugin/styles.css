@@ -27,6 +27,10 @@
     display: flex;
     flex-direction: column;
 
+    min-width: 1000px;
+    overflow: hidden;
+    overflow-x: auto;
+
     --calendar-table-border: 1px solid var(--background-modifier-border);
 }
 
@@ -204,7 +208,18 @@
     }
 }
 
+a.commitment {
+    color: var(--text-accent);
+    text-decoration: none;
+
+    &:hover {
+        color: var(--text-accent-hover);
+        text-decoration: underline;
+    }
+}
+
 .commitment {
+    display: block;
     background-color: var(--background-secondary-alt);
     padding: var(--size-4-1) var(--size-4-2);
     border-radius: var(--radius-m);
@@ -212,7 +227,7 @@
 }
 
 .commitment.new-commitment {
-    padding: var(--size-2-1) var(--size-2-2);
+    padding: 0 var(--size-2-2);
     border-radius: var(--radius-m);
     background: none;
     border: 1px dashed var(--background-modifier-border);
@@ -235,12 +250,12 @@
         opacity: 1;
     }
 
-    .commitment.new-commitment {
+    .day-container > .commitment.new-commitment {
         opacity: 1;
     }
 }
 
-.option-down .calendar-day:hover {
+.option-down .calendar-day {
     .schedule-block.empty-block {
         display: block;
 
@@ -260,7 +275,11 @@
     border-radius: var(--radius-s);
 
     &.new-commitment {
-
+        padding: 0 var(--size-2-2);
+        border-radius: var(--radius-s);
+        background: none;
+        opacity: 0;
+        font-size: .8em;
     }
 }
 
@@ -283,6 +302,10 @@
         padding: 0 var(--size-4-2) var(--size-2-2);
         color: var(--text-muted);
         font-size: .8em;
+    }
+
+    &:hover .new-commitment {
+        opacity: 1;
     }
 }
 
@@ -316,4 +339,12 @@
     /*height: 0;*/
     /*overflow: hidden;*/
     /*transition: height .3s ease;*/
+}
+
+.workspace-split.mod-vertical > * {
+    &.calendar-plugin-side-leaf {
+        width: 30%;
+        flex-grow: 0.5;
+        /*flex: 0 0 auto !important;*/
+    }
 }

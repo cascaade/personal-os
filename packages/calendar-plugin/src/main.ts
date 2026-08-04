@@ -1,9 +1,10 @@
-import { Editor, MarkdownFileInfo, MarkdownView, Modal, Notice, Plugin, WorkspaceLeaf, } from 'obsidian';
+import { Editor, ItemView, MarkdownFileInfo, MarkdownView, Modal, Notice, Plugin, WorkspaceLeaf, } from 'obsidian';
 import { DEFAULT_SETTINGS, CalendarSettings, CalendarSettingTab, } from './settings';
 import { CalendarView, VIEW_TYPE_CALENDAR } from "./views/CalendarView";
 
 export default class CalendarPlugin extends Plugin {
     settings!: CalendarSettings;
+    view!: ItemView;
 
     async onload() {
         await this.loadSettings();
@@ -58,5 +59,7 @@ export default class CalendarPlugin extends Plugin {
         await this.saveData(this.settings);
     }
 
-    onunload() {}
+    onunload() {
+
+    }
 }

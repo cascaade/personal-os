@@ -3,8 +3,9 @@ import { minutesToTime, MONTHS_OF_YEAR_TRUNC } from "@/util/date-utils";
 import { DayInfo } from "@/util/schedule-utils";
 import { Commitment, CommitmentsProvider } from "@/services/CommitmentsProvider";
 import { CSSProperties, memo, useContext, useEffect, useState } from "react";
-import { ObsidianContext } from "@/views/CalendarView";
+import { ObsidianContext, VIEW_TYPE_CALENDAR } from "@/views/CalendarView";
 import { MIN_ROW_HEIGHT, ROW_HEIGHT_EASE_TIME_MS } from "@/components/Calendar";
+import { TFile, WorkspaceLeaf } from "obsidian";
 
 export interface DayProps {
     dayInfo: DayInfo;
@@ -43,11 +44,6 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
                     c.project?.class?.period === block.period
             )
         );
-
-    if (dayInfo.date.toDateString() == "Thu Sep 03 2026") {
-        console.log(aboveShown);
-    }
-
 
     const now = new Date();
 
@@ -101,11 +97,25 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
                                     </div>
                                     {
                                         cs.map((comm, ci) => (
-                                            <div className="commitment" key={ ci }>
-                                                { comm.title }
-                                            </div>
+                                            <a
+                                                href={comm.file.path}
+                                                key={ci}
+                                                className={concat("commitment", "internal-link")}
+                                                data-href={comm.file.path}
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    calendarContext.obsidian.openNoteToRight(comm.file.path).catch(() => null);
+                                                }}
+                                            >
+                                                {comm.title}
+                                            </a>
                                         ))
                                     }
+                                    { cs.length > 0 && (
+                                        <div className={ concat("commitment", "new-commitment") }>
+                                            +
+                                        </div>
+                                    ) }
                                 </div>
                             )
                         } )()
@@ -122,7 +132,6 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
                 <div className={ concat("commitment", "new-commitment") }>
                     +
                 </div>
-                {/*{JSON.stringify(dayInfo, null, 2)}*/ }
             </div>
         </div> );
 }

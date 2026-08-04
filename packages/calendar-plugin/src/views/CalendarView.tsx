@@ -19,6 +19,7 @@ export const ObsidianContext = createContext<ObsidianContextProps | null>(null);
 
 export class CalendarView extends ItemView {
     private root!: Root;
+    private calendarContext!: CalendarContext;
 
     constructor(
         leaf: WorkspaceLeaf,
@@ -41,16 +42,20 @@ export class CalendarView extends ItemView {
     }
 
     async onOpen() {
+        console.log("open")
         this.root = createRoot(this.contentEl);
+        this.calendarContext = new CalendarContext(this.app);
 
         this.root.render(
-            <ObsidianContext.Provider value={ { app: this.plugin, calendarContext: new CalendarContext(this.app), settings: this.settings }}>
+            <ObsidianContext.Provider value={ { app: this.plugin, calendarContext: this.calendarContext, settings: this.settings }}>
                 <Calendar />
             </ObsidianContext.Provider>,
         );
     }
 
     async onClose() {
+        console.log("unmount");
+        this.calendarContext.obsidian.onunload();
         this.root.unmount();
     }
 }
