@@ -1,18 +1,24 @@
 import { concat } from "@/util/classname-utils";
 import { minutesToTime, MONTHS_OF_YEAR_TRUNC } from "@/util/date-utils";
 import { DayInfo } from "@/util/schedule-utils";
-import { Commitment } from "@/services/CommitmentsProvider";
-import { useContext } from "react";
+import { Commitment, CommitmentsProvider } from "@/services/CommitmentsProvider";
+import { memo, useContext, useEffect, useState } from "react";
 import { ObsidianContext } from "@/views/CalendarView";
 
 export interface DayProps {
     dayInfo: DayInfo;
     thisMonth: boolean;
-    commitments: Commitment[];
 }
 
-export default function Day({ dayInfo, thisMonth, commitments }: DayProps) {
-    const { settings } = useContext(ObsidianContext)!;
+function Day({ dayInfo, thisMonth }: DayProps) {
+    const { settings, calendarContext } = useContext(ObsidianContext)!;
+
+    const [commitments, setCommitments] = useState<Commitment[]>([]);
+
+    useEffect(() => {
+        ( async () => setCommitments(await calendarContext.commitments?.getCommitments(dayInfo.date) ?? []) )()
+            .catch(() => null);
+    }, [ calendarContext.commitments, dayInfo.date ]);
 
     return (<div className={ concat("calendar-day", dayInfo.extraneous?.type) }>
         <div className="day-header">
@@ -70,3 +76,5 @@ export default function Day({ dayInfo, thisMonth, commitments }: DayProps) {
         </div>
     </div>);
 }
+
+export default memo(Day);

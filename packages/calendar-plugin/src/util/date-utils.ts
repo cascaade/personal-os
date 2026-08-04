@@ -8,11 +8,6 @@ export enum CalendarFillMode {
     NONE,
 }
 
-export interface LoadedMonth {
-    month: Date;
-    fillMode: CalendarFillMode;
-}
-
 export function parseLocalDate(value: string | Date): Date {
     if (value instanceof Date) return value;
 
@@ -48,17 +43,31 @@ export function parseLocalDate(value: string | Date): Date {
     );
 }
 
+const calendarDaysCache = new Map<string, Date[]>();
+
+function getCalendarDaysCacheKey(month: Date, mode: CalendarFillMode): string {
+    return `${month.getFullYear()}-${month.getMonth()}-${mode}`;
+}
+
 export function getCalendarDays(
     month: Date,
-    mode: CalendarFillMode = CalendarFillMode.BOTH
+    mode: CalendarFillMode
 ): Date[] {
+    const cacheKey = getCalendarDaysCacheKey(month, mode);
+
+    const cached = calendarDaysCache.get(cacheKey);
+    if (cached) {
+        // Return a copy so callers can't mutate our cached Date objects.
+        return cached.map((d) => new Date(d));
+    }
+
     const year = month.getFullYear();
     const monthIndex = month.getMonth();
 
     const first = new Date(year, monthIndex, 1);
     const last = new Date(year, monthIndex + 1, 0);
 
-    const firstWeekday = first.getDay(); // Sunday = 0
+    const firstWeekday = first.getDay();
     const lastWeekday = last.getDay();
 
     const includeLeading =
@@ -92,7 +101,9 @@ export function getCalendarDays(
         days.push(new Date(d));
     }
 
-    return days;
+    calendarDaysCache.set(cacheKey, days);
+
+    return days.map((d) => new Date(d));
 }
 
 export function addMonths(date: Date, months: number): Date {

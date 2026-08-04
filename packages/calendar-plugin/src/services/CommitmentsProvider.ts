@@ -41,6 +41,7 @@ export type Commitment = {
 
 export class CommitmentsProvider {
     private cache: Map<string, Commitment> | null = null;
+    private commitmentsByDayCache: Map<string, Commitment[]> = new Map();
 
     constructor(private ctx: CalendarContext) {}
 
@@ -101,5 +102,22 @@ export class CommitmentsProvider {
         }
 
         return [...this.cache!.values()];
+    }
+
+    //TODO: CACHE ASSUMES THINGS DONT CHANGE!! MUST FIX!!
+    public async getCommitments(date: Date): Promise<Commitment[]> {
+        const cacheKey = date.toDateString();
+
+        const cached = this.commitmentsByDayCache.get(cacheKey);
+        if (cached) {
+            return cached;
+        }
+
+        const commitments = (await this.getAllCommitments())
+            .filter(c => c.due?.toDateString() == cacheKey);
+
+        this.commitmentsByDayCache.set(cacheKey, commitments);
+
+        return commitments;
     }
 }

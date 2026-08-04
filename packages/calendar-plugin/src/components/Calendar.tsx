@@ -1,60 +1,62 @@
-import { useContext, useEffect, useRef, useState } from "react";
-import Day from "@/components/Day";
-import { addMonths, CalendarFillMode, DAYS_OF_WEEK_TRUNC, getCalendarDays, LoadedMonth } from "@/util/date-utils";
-import { calendarResolver } from "@/services/CalendarResolver";
-import { ObsidianContext } from "@/views/CalendarView";
-import { Commitment } from "@/services/CommitmentsProvider";
+import { useEffect, useRef, useState } from "react";
+import { addMonths, CalendarFillMode, DAYS_OF_WEEK_TRUNC, getCalendarDays } from "@/util/date-utils";
 import { concat } from "@/util/classname-utils";
+import Month from "@/components/Month";
 
 const MIN_ROW_HEIGHT = 120;
 
+export interface LoadedMonth {
+    month: Date;
+    fillMode: CalendarFillMode;
+    dates: Date[];
+}
+
+function createLoadedMonth(first: Date, fillMode: CalendarFillMode) {
+    return {
+        month: first,
+        fillMode: fillMode,
+        dates: getCalendarDays(first, fillMode)
+    };
+}
+
 export function Calendar() {
-    const [commitments, setCommitments] = useState<Commitment[]>([]);
-
-    const { calendarContext } = useContext(ObsidianContext)!;
-
-    useEffect(() => {
-        (async () =>  setCommitments(await calendarContext.commitments?.getAllCommitments() ?? []))()
-            .catch(() => null);
-    }, [calendarContext.commitments]);
-
-    const [months, setMonths] = useState<LoadedMonth[]>(() => {
+    const [ months, setMonths ] = useState<LoadedMonth[]>(() => {
         const first = new Date();
         first.setDate(1);
 
         return [
-            {
-                month: addMonths(first, -3),
-                fillMode: CalendarFillMode.TRAILING,
-            },
-            {
-                month: addMonths(first, -2),
-                fillMode: CalendarFillMode.TRAILING,
-            },
-            {
-                month: addMonths(first, -1),
-                fillMode: CalendarFillMode.TRAILING,
-            },
-            {
-                month: first,
-                fillMode: CalendarFillMode.NONE,
-            },
-            {
-                month: addMonths(first, 1),
-                fillMode: CalendarFillMode.LEADING,
-            },
-            {
-                month: addMonths(first, 2),
-                fillMode: CalendarFillMode.LEADING,
-            },
-            {
-                month: addMonths(first, 3),
-                fillMode: CalendarFillMode.LEADING,
-            },
+            createLoadedMonth(
+                addMonths(first, -3),
+                CalendarFillMode.TRAILING,
+            ),
+            createLoadedMonth(
+                addMonths(first, -2),
+                CalendarFillMode.TRAILING,
+            ),
+            createLoadedMonth(
+                addMonths(first, -1),
+                CalendarFillMode.TRAILING,
+            ),
+            createLoadedMonth(
+                first,
+                CalendarFillMode.NONE,
+            ),
+            createLoadedMonth(
+                addMonths(first, 1),
+                CalendarFillMode.LEADING,
+            ),
+            createLoadedMonth(
+                addMonths(first, 2),
+                CalendarFillMode.LEADING,
+            ),
+            createLoadedMonth(
+                addMonths(first, 3),
+                CalendarFillMode.LEADING,
+            ),
         ];
     });
 
-    const [visibleMonth, setVisibleMonth] = useState(months[3]);
+    const [ visibleMonth, setVisibleMonth ] = useState(months[3]);
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const monthRefs = useRef(new Map<number, HTMLDivElement>());
@@ -90,7 +92,7 @@ export function Calendar() {
 
             const centeredTarget =
                 relativeTop -
-                (container.clientHeight - MIN_ROW_HEIGHT - monthEl.offsetHeight) / 2;
+                ( container.clientHeight - MIN_ROW_HEIGHT - monthEl.offsetHeight ) / 2;
 
             const target = Math.min(centeredTarget, relativeTop);
 
@@ -114,10 +116,20 @@ export function Calendar() {
         const container = scrollRef.current;
         if (!container) return;
 
+        let lastUpdate = 0;
+
         const onScroll = () => {
             if (!initialized.current) {
                 return;
             }
+
+            const now = Date.now();
+
+            if (now - lastUpdate < 100) {
+                return;
+            }
+
+            lastUpdate = now;
 
             let current = 0;
             let bestScore = -1;
@@ -152,10 +164,10 @@ export function Calendar() {
 
                 setMonths(prev => [
                     ...prev,
-                    {
-                        month: addMonths(prev[prev.length - 1]!.month, 1),
-                        fillMode: CalendarFillMode.LEADING,
-                    },
+                    createLoadedMonth(
+                        addMonths(prev[prev.length - 1]!.month, 1),
+                        CalendarFillMode.LEADING,
+                    ),
                 ]);
 
                 requestAnimationFrame(() => {
@@ -170,10 +182,10 @@ export function Calendar() {
                 const oldHeight = container.scrollHeight;
 
                 setMonths(prev => [
-                    {
-                        month: addMonths(prev[0]!.month, -1),
-                        fillMode: CalendarFillMode.TRAILING,
-                    },
+                    createLoadedMonth(
+                        addMonths(prev[0]!.month, -1),
+                        CalendarFillMode.TRAILING,
+                    ),
                     ...prev,
                 ]);
 
@@ -188,9 +200,9 @@ export function Calendar() {
         onScroll();
 
         return () => container.removeEventListener("scroll", onScroll);
-    }, [months]);
+    }, [ months ]);
 
-    const [optionDown, setOptionDown] = useState(false);
+    const [ optionDown, setOptionDown ] = useState(false);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -223,56 +235,34 @@ export function Calendar() {
             <div className="calendar-header">
                 <div className="calendar-banner">
                     <div className="calendar-month">
-                        {visibleMonth?.month.toLocaleString(undefined, {
+                        { visibleMonth?.month.toLocaleString(undefined, {
                             month: "long",
                             year: "numeric",
-                        })}
+                        }) }
                     </div>
 
                     <div className="calendar-options">
-                        <button className="to-today-btn" onClick={() => scrollToCurrentMonth(true)}>Today</button>
+                        <button className="to-today-btn" onClick={ () => scrollToCurrentMonth(true) }>Today</button>
                     </div>
                 </div>
 
                 <div className="calendar-labels">
-                    {DAYS_OF_WEEK_TRUNC.map((day) => (
-                        <div className="calendar-label" key={day}>
-                            {day}
+                    { DAYS_OF_WEEK_TRUNC.map((day) => (
+                        <div className="calendar-label" key={ day }>
+                            { day }
                         </div>
-                    ))}
+                    )) }
                 </div>
             </div>
 
             <div
-                className={ concat("calendar-table") }
-                ref={scrollRef}
+                className={ concat("calendar-table", optionDown && "option-down") }
+                ref={ scrollRef }
             >
-                {months.map(({ month, fillMode }, index) => (
-                    <div
-                        key={month.toISOString()}
-                        className={ concat("calendar-month-section", optionDown && "option-down") }
-                        data-index={index}
-                        ref={(el) => {
-                            if (el) {
-                                monthRefs.current.set(index, el);
-                            } else {
-                                monthRefs.current.delete(index);
-                            }
-                        }}
-                    >
-                        {getCalendarDays(month, fillMode).map((date) => (
-                            <Day
-                                key={date.toISOString()}
-                                dayInfo={calendarResolver.get(date)}
-                                commitments={commitments.filter(c => c.due?.toDateString() == date.toDateString())}
-                                thisMonth={
-                                    date.getFullYear() === visibleMonth?.month.getFullYear() &&
-                                    date.getMonth() === visibleMonth?.month.getMonth()
-                                }
-                            />
-                        ))}
-                    </div>
-                ))}
+                { months.map((month, index) => (
+                    <Month key={ index } loadedMonth={ month } monthRefs={ monthRefs } visibleMonth={ visibleMonth }
+                           index={ index }></Month>
+                )) }
             </div>
         </div>
     );
