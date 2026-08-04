@@ -8,9 +8,10 @@ export interface MonthProps {
     visibleMonth?: LoadedMonth;
     monthRefs: RefObject<Map<number, HTMLDivElement>>;
     index: number;
+    optionDown: boolean;
 }
 
-function Month({ loadedMonth, monthRefs, index, visibleMonth }: MonthProps) {
+function Month({ loadedMonth, monthRefs, index, visibleMonth, optionDown }: MonthProps) {
     const { month } = loadedMonth;
 
     return (
@@ -29,6 +30,7 @@ function Month({ loadedMonth, monthRefs, index, visibleMonth }: MonthProps) {
                 <Day
                     key={date.toISOString()}
                     dayInfo={calendarResolver.get(date)}
+                    optionDown={optionDown}
                     thisMonth={
                         date.getFullYear() === visibleMonth?.month.getFullYear() &&
                         date.getMonth() === visibleMonth?.month.getMonth()

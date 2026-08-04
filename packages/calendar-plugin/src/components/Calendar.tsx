@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { addMonths, CalendarFillMode, DAYS_OF_WEEK_TRUNC, getCalendarDays } from "@/util/date-utils";
 import { concat } from "@/util/classname-utils";
 import Month from "@/components/Month";
 
-const MIN_ROW_HEIGHT = 120;
+export const MIN_ROW_HEIGHT = 120;
+export const ROW_HEIGHT_EASE_TIME_MS = 0;
 
 export interface LoadedMonth {
     month: Date;
@@ -65,6 +66,24 @@ export function Calendar() {
     const loadingBottom = useRef(false);
 
     const initialized = useRef(false);
+
+    const lastMousePosition = useRef({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const container = scrollRef.current;
+        if (!container) return setOptionDown(true);
+
+        const handleMouseMove = (e: MouseEvent) => {
+            const rect = container.getBoundingClientRect();
+            lastMousePosition.current = { x: e.clientX, y: e.clientY };
+        };
+
+        container.addEventListener("mousemove", handleMouseMove);
+
+        return () => {
+            container.removeEventListener("mousemove", handleMouseMove);
+        }
+    }, []);
 
     const scrollToCurrentMonth = (smooth: boolean) => {
         const container = scrollRef.current;
@@ -204,19 +223,33 @@ export function Calendar() {
 
     const [ optionDown, setOptionDown ] = useState(false);
 
+    const anchorElRef = useRef<HTMLElement | null>(null);
+    const anchorTopRef = useRef(0);
+    const anchorHeight = useRef(0);
+
     useEffect(() => {
+        const container = scrollRef.current;
+        if (!container) return;
+
+        const captureAnchor = (next: boolean) => {
+            const el = document.elementFromPoint(lastMousePosition.current.x, lastMousePosition.current.y);
+            const dayEl = el?.closest<HTMLElement>("[data-date]") ?? null;
+
+            const rect = dayEl?.getBoundingClientRect();
+
+            anchorElRef.current = dayEl;
+            anchorHeight.current = rect?.height ?? 0;
+            anchorTopRef.current = rect?.top ?? 0;
+
+            setOptionDown(next);
+        };
+
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Alt") {
-                setOptionDown(true);
-            }
+            if (e.key === "Alt") captureAnchor(true);
         };
-
         const handleKeyUp = (e: KeyboardEvent) => {
-            if (e.key === "Alt") {
-                setOptionDown(false);
-            }
+            if (e.key === "Alt") captureAnchor(false);
         };
-
         const handleBlur = () => setOptionDown(false);
 
         window.addEventListener("keydown", handleKeyDown);
@@ -229,6 +262,17 @@ export function Calendar() {
             window.removeEventListener("blur", handleBlur);
         };
     }, []);
+
+    useLayoutEffect(() => {
+        const container = scrollRef.current;
+        const dayEl = anchorElRef.current;
+        if (!container || !dayEl) return;
+
+        const rect = dayEl.getBoundingClientRect();
+
+        const afterTop = rect.top;
+        container.scrollTop += afterTop - anchorTopRef.current;
+    }, [optionDown]);
 
     return (
         <div className="calendar-view">
@@ -260,8 +304,8 @@ export function Calendar() {
                 ref={ scrollRef }
             >
                 { months.map((month, index) => (
-                    <Month key={ index } loadedMonth={ month } monthRefs={ monthRefs } visibleMonth={ visibleMonth }
-                           index={ index }></Month>
+                    <Month key={ month.month.getTime() } loadedMonth={ month } monthRefs={ monthRefs } visibleMonth={ visibleMonth }
+                           index={ index } optionDown={optionDown}></Month>
                 )) }
             </div>
         </div>

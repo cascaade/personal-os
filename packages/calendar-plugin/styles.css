@@ -76,8 +76,6 @@
     border-right: none;
 
     padding: var(--size-4-1);
-
-    min-height: 120px;
 }
 
 .calendar-day:nth-child(7n) {
@@ -105,6 +103,10 @@
     line-height: 1;
     white-space: nowrap;
     border-radius: var(--radius-s);
+}
+
+.day-container {
+    font-size: .9em;
 }
 
 /* ALL EXTRANEOUS */
@@ -186,17 +188,132 @@
     color: var(--text-faint);
 }
 
-.commitment {
-    background-color: var(--background-secondary-alt);
-    font-size: .9em;
-    padding: var(--size-2-1) var(--size-2-2);
+.calendar-day hr {
+    margin: var(--size-4-1) auto;
+    width: 80%;
     border-radius: var(--radius-s);
+    opacity: 0;
+    display: none;
+
+    &.above-shown {
+        display: block;
+    }
+
+    &.above-shown.bottom-shown {
+        opacity: 1;
+    }
 }
 
-.option-down .calendar-month-section:hover .schedule-block.empty-block {
-    display: unset;
+.commitment {
+    background-color: var(--background-secondary-alt);
+    padding: var(--size-4-1) var(--size-4-2);
+    border-radius: var(--radius-m);
+    margin-bottom: var(--size-4-1);
+}
+
+.commitment.new-commitment {
+    padding: var(--size-2-1) var(--size-2-2);
+    border-radius: var(--radius-m);
+    background: none;
+    border: 1px dashed var(--background-modifier-border);
+    text-align: center;
+    color: var(--text-faint);
+    cursor: pointer;
+    opacity: 0;
+
+    margin-bottom: 0;
+
+    &:hover {
+        color: var(--text-muted);
+        border: 1px dashed var(--background-modifier-border-hover);
+    }
+}
+
+.calendar-day:hover {
+    hr.above-shown, hr.hover-shown {
+        display: block;
+        opacity: 1;
+    }
+
+    .commitment.new-commitment {
+        opacity: 1;
+    }
+}
+
+.option-down .calendar-day:hover {
+    .schedule-block.empty-block {
+        display: block;
+
+        /* for animation */
+        /*padding: 0;*/
+        /*height: 2em;*/
+    }
+
+    hr.hover-shown.bottom-shown {
+        opacity: 1;
+    }
+}
+
+.schedule-block .commitment {
+    background-color: var(--background-secondary-alt);
+    padding: var(--size-2-1) var(--size-2-2);
+    border-radius: var(--radius-s);
+
+    &.new-commitment {
+
+    }
+}
+
+.schedule-block:not(.empty-block) {
+    background-color: var(--background-secondary);
+    padding: var(--size-2-2);
+    border-radius: var(--radius-m);
+    border: 1px solid var(--background-modifier-border);
+
+    margin-bottom: var(--size-4-1);
+
+    &.now {
+        box-shadow: 0 0 4px var(--color-accent);
+        border: 1px solid var(--color-accent);
+    }
+
+    .block-header {
+        display: flex;
+        justify-content: space-between;
+        padding: 0 var(--size-4-2) var(--size-2-2);
+        color: var(--text-muted);
+        font-size: .8em;
+    }
 }
 
 .schedule-block.empty-block {
     display: none;
+
+    .block-header {
+        display: flex;
+        justify-content: space-between;
+        color: var(--text-faint);
+    }
+
+    &:hover {
+        .block-header {
+            color: var(--text-muted);
+        }
+
+        border: 1px dashed var(--background-modifier-border-hover);
+    }
+
+    cursor: pointer;
+
+    border: 1px dashed var(--background-modifier-border);
+    padding: var(--size-4-1) var(--size-4-2);
+    box-sizing: border-box;
+    border-radius: var(--radius-m);
+
+    margin-bottom: var(--size-4-1);
+
+    /* for animation */
+    /*height: 0;*/
+    /*overflow: hidden;*/
+    /*transition: height .3s ease;*/
 }
