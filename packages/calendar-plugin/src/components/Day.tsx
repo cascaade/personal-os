@@ -21,7 +21,7 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
 
     const getPeriod = (c: Commitment) => {
         let classPeriod = calendarContext.commitments.getClass(c)?.period;
-        if (classPeriod) return classPeriod
+        if (classPeriod) return classPeriod;
 
         let project = calendarContext.commitments.getProject(c);
         if (!project) return;
@@ -88,6 +88,26 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
 
     const now = new Date();
 
+    const onNewCommitment = () => {
+        calendarContext.commitments.createNewCommitment().then(async (f) => {
+            await calendarContext.commitments.modifyCommitmentFrontmatter(f, {
+                role: "event",
+                assigned: toLocalISOString(new Date()),
+                due: formatDate(dayInfo.date)
+            });
+            await calendarContext.obsidian.openInRightPane(f);
+        }).catch(console.error);
+    }
+
+    const onContextMenu = (e: MouseEvent) => {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            onNewCommitment();
+        }
+    }
+
     return (
         <div className={ concat("calendar-day", dayInfo.extraneous?.type, isOver && "drop-target") } data-date={ dayInfo.date.toDateString() }
              ref={setNodeRef}
@@ -121,16 +141,7 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
                         <CommitmentEl commitment={comm} draggable={true} key={ ci }></CommitmentEl>
                     ))
                 }
-                <div className={ concat("commitment", "new-commitment") } onClick={ () => {
-                    calendarContext.commitments.createNewCommitment().then(async (f) => {
-                        await calendarContext.commitments.modifyCommitmentFrontmatter(f, {
-                            role: "event",
-                            assigned: toLocalISOString(new Date()),
-                            due: formatDate(dayInfo.date)
-                        });
-                        await calendarContext.obsidian.openInRightPane(f);
-                    }).catch(console.error);
-                } }>
+                <div className={ concat("commitment", "new-commitment") } onClick={ onNewCommitment } onContextMenu={onContextMenu}>
                     +
                 </div>
             </div>

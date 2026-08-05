@@ -310,7 +310,7 @@ a.commitment {
     padding: var(--size-2-2);
     border-radius: var(--radius-m);
     border: 1px solid var(--background-modifier-border);
-    cursor: grab;
+    cursor: alias;
 
     margin-bottom: var(--size-4-1);
 

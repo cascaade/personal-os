@@ -1,19 +1,23 @@
-import { CSSProperties, memo, useContext, useEffect, useRef, useState } from "react";
+import { CSSProperties, memo, MouseEventHandler, useContext, useEffect, useRef, useState } from "react";
 import { concat } from "@/util/classname-utils";
 import { formatDate, minutesToTime, toLocalISOString } from "@/util/date-utils";
 import CommitmentEl from "@/components/CommitmentEl";
 import { ObsidianContext } from "@/views/CalendarView";
 import { Commitment } from "@/services/CommitmentsProvider";
-import { Block, DayInfo, ParsedBlock } from "@/util/schedule-utils";
+import { DayInfo, ParsedBlock } from "@/util/schedule-utils";
 import { ROW_HEIGHT_EASE_TIME_MS } from "@/components/Calendar";
 import { useDroppable } from "@dnd-kit/core";
 
-function ScheduleBlock({ commitments, block, dayInfo }: { commitments: readonly Commitment[], block: ParsedBlock, dayInfo: DayInfo }) {
+function ScheduleBlock({ commitments, block, dayInfo }: {
+    commitments: readonly Commitment[],
+    block: ParsedBlock,
+    dayInfo: DayInfo
+}) {
     const { settings, calendarContext } = useContext(ObsidianContext)!;
 
     const getPeriod = (c: Commitment) => {
         let classPeriod = calendarContext.commitments.getClass(c)?.period;
-        if (classPeriod) return classPeriod
+        if (classPeriod) return classPeriod;
 
         let project = calendarContext.commitments.getProject(c);
         if (!project) return;
@@ -35,8 +39,8 @@ function ScheduleBlock({ commitments, block, dayInfo }: { commitments: readonly 
     }
 
     const nowMinutes = useRef(getNowMinutes());
-    const [isNow, setIsNow] = useState(false);
-    const [, setTick] = useState(0);
+    const [ isNow, setIsNow ] = useState(false);
+    const [ , setTick ] = useState(0);
 
     function isSameDay(a: Date, b: Date) {
         return (
@@ -91,7 +95,7 @@ function ScheduleBlock({ commitments, block, dayInfo }: { commitments: readonly 
 
             const now = new Date();
             const ms =
-                (nextBoundary - current) * 60_000 -
+                ( nextBoundary - current ) * 60_000 -
                 now.getSeconds() * 1000 -
                 now.getMilliseconds();
 
@@ -100,12 +104,12 @@ function ScheduleBlock({ commitments, block, dayInfo }: { commitments: readonly 
 
         const id = scheduleNext();
         return () => id && clearTimeout(id);
-    }, [block.from, block.to, dayInfo.date]);
+    }, [ block.from, block.to, dayInfo.date ]);
 
     const blockStyles = { transition: `height ${ ROW_HEIGHT_EASE_TIME_MS }ms ease` } as CSSProperties;
 
-    const {setNodeRef, isOver} = useDroppable({
-        id: `${formatDate(dayInfo.date)}-${block.period}`,
+    const { setNodeRef, isOver } = useDroppable({
+        id: `${ formatDate(dayInfo.date) }-${ block.period }`,
         data: {
             type: "period",
             date: dayInfo.date,
@@ -113,17 +117,52 @@ function ScheduleBlock({ commitments, block, dayInfo }: { commitments: readonly 
         },
     });
 
+    const createNewCommitment = () => {
+        calendarContext.commitments.createNewCommitment()
+            .then(async (f) => {
+                const c = calendarContext.classes.getClassByPeriod(block.period);
+                await calendarContext.commitments.modifyCommitmentFrontmatter(f, {
+                    role: "event",
+                    assigned: toLocalISOString(new Date()),
+                    due: formatDate(dayInfo.date),
+                    class: c ? `[[${ c.file.path }]]` : ""
+                });
+                await calendarContext.obsidian.openInRightPane(f);
+            })
+            .catch(console.error);
+    }
+
+    const onClick = () => {
+        let c = calendarContext.classes.getClassByPeriod(block.period);
+
+        if (c) {
+            if (cs.length === 0)
+                return createNewCommitment();
+
+            calendarContext.obsidian.openInRightPane(c.file).catch(console.error);
+        }
+    }
+
+    const onContextMenu = (e: MouseEvent, newCommitment: boolean) => {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (newCommitment) {
+                createNewCommitment();
+            } else {
+                onClick();
+            }
+        }
+    }
+
     return (
         <div
-            ref={setNodeRef}
+            ref={ setNodeRef }
             className={ concat("schedule-block", cs.length === 0 && "empty-block", isNow && "now", isOver && "drop-target") }
             style={ blockStyles }
-            onClick={ () => {
-                let c = calendarContext.classes.getClassByPeriod(block.period);
-                if (c) {
-                    calendarContext.obsidian.openInRightPane(c.file).catch(console.error);
-                }
-            } }
+            onClick={ onClick }
+            onContextMenu={ e => onContextMenu(e as unknown as MouseEvent, false) }
         >
             <div className="block-header">
                 <span className="block-period">{ block.period }</span>
@@ -141,24 +180,15 @@ function ScheduleBlock({ commitments, block, dayInfo }: { commitments: readonly 
             </div>
             {
                 cs.map((comm, ci) => (
-                    <CommitmentEl commitment={comm} draggable={true} key={ ci }></CommitmentEl>
+                    <CommitmentEl commitment={ comm } draggable={ true } key={ ci }></CommitmentEl>
                 ))
             }
             { cs.length > 0 && (
-                <div className={ concat("commitment", "new-commitment") } onClick={ () => {
-                    calendarContext.commitments.createNewCommitment()
-                        .then(async (f) => {
-                            const c = calendarContext.classes.getClassByPeriod(block.period);
-                            await calendarContext.commitments.modifyCommitmentFrontmatter(f, {
-                                role: "event",
-                                assigned: toLocalISOString(new Date()),
-                                due: formatDate(dayInfo.date),
-                                class: c ? `[[${ c.file.path }]]` : ""
-                            });
-                            await calendarContext.obsidian.openInRightPane(f);
-                        })
-                        .catch(console.error);
-                } }>
+                <div
+                    className={ concat("commitment", "new-commitment") }
+                    onClick={ createNewCommitment }
+                    onContextMenu={ e => onContextMenu(e as unknown as MouseEvent, true) }
+                >
                     +
                 </div>
             ) }
