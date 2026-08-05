@@ -1,12 +1,17 @@
 import { concat } from "@/util/classname-utils";
-import React, { memo, useContext } from "react";
+import React, { memo, useContext, useMemo } from "react";
 import { Commitment } from "@/services/CommitmentsProvider";
 import { ObsidianContext } from "@/views/CalendarView";
 import { useDraggable } from "@dnd-kit/core";
 import { Menu } from "obsidian";
+import { containsEmoji } from "@/util/emoji-utils";
 
 function CommitmentEl({ commitment, draggable }: { commitment: Commitment, draggable: boolean }) {
     const { calendarContext } = useContext(ObsidianContext)!;
+
+    const project = useMemo(() => {
+        return calendarContext.commitments.getProject(commitment);
+    }, [commitment]);
 
     if (draggable) {
         const {
@@ -67,7 +72,7 @@ function CommitmentEl({ commitment, draggable }: { commitment: Commitment, dragg
             } }
             onContextMenu={ onContextMenu }
         >
-            { commitment.title }
+            {(project && (containsEmoji(project.title.charAt(0)) ? project.title.charAt(0) : project.title.charAt(0) + ": "))} {commitment.title}
         </a>);
     }
 

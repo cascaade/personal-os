@@ -1,24 +1,14 @@
 import { concat } from "@/util/classname-utils";
-import { formatDate, minutesToTime, MONTHS_OF_YEAR_TRUNC, toLocalISOString } from "@/util/date-utils";
+import { formatDate, MONTHS_OF_YEAR_TRUNC, toLocalISOString } from "@/util/date-utils";
 import { DayInfo } from "@/util/schedule-utils";
 import { Commitment } from "@/services/CommitmentsProvider";
-import React, {
-    CSSProperties,
-    memo,
-    MouseEventHandler,
-    useCallback,
-    useContext,
-    useEffect,
-    useRef,
-    useSyncExternalStore
-} from "react";
+import React, { CSSProperties, memo, useCallback, useContext, useEffect, useRef, useSyncExternalStore } from "react";
 import { ObsidianContext } from "@/views/CalendarView";
-import { MIN_ROW_HEIGHT, ROW_HEIGHT_EASE_TIME_MS } from "@/components/Calendar";
+import { MIN_ROW_HEIGHT } from "@/components/Calendar";
 import { Menu, setTooltip } from "obsidian";
 import CommitmentEl from "./CommitmentEl";
 import { useDroppable } from "@dnd-kit/core";
 import ScheduleBlock from "@/components/ScheduleBlock";
-import { ConfirmModal } from "@/obsidian/ConfirmModal";
 
 export interface DayProps {
     dayInfo: DayInfo;
