@@ -1,7 +1,6 @@
 import { TFile } from "obsidian";
-import { formatDate, parseLocalDate, toLocalISOString } from "@/util/date-utils";
+import { formatDate, parseLocalDate } from "@/util/date-utils";
 import { CalendarContext } from "@/services/CalendarContext";
-import { Class } from "@/services/ClassProvider";
 
 type CommitmentFrontmatter = {
     type?: string;
@@ -32,8 +31,8 @@ export type Commitment = {
     start?: Date;
     due?: Date;
 
-    class?: Class;
-    project?: Commitment;
+    classFile?: string;
+    projectFile?: string;
 
     actual_effort?: number;
 }
@@ -41,23 +40,66 @@ export type Commitment = {
 const MAX_LOOSE_FILES = 10;
 
 export class CommitmentsProvider {
-    private cache: Map<string, Commitment> | null = null;
-    private commitmentsByDayCache: Map<string, Commitment[]> = new Map();
+    private cache = new Map<TFile, Commitment>();
+    private cacheByPath = new Map<string, Commitment>();
+    private commitmentsByDay = new Map<string, Commitment[]>();
 
-    constructor(private ctx: CalendarContext) {}
+    private readonly EMPTY_COMMITMENTS: readonly Commitment[] = [];
 
-    public parseProject(file: TFile | undefined, originCommitments: TFile[]): Commitment | null {
-        if (!file) return null;
+    private listeners = new Set<() => void>();
+    private pending = new Map<string, number>();
 
-        if (originCommitments.contains(file)) return null; // prevent circular loops
+    constructor(private ctx: CalendarContext) {
+        this.cache = new Map();
 
-        const fm = this.ctx.obsidian.getFrontmatter(file) as CommitmentFrontmatter;
-        if (fm?.type !== "commitment" || fm?.role !== "project") return null;
+        for (const file of this.ctx.obsidian.getMarkdownFiles()) {
+            if (this.ctx.obsidian.isInTemplatesFolder(file)) continue;
 
-        return this.parseCommitment(file, originCommitments);
+            this.reparse(file, false);
+
+            console.log("e")
+        }
+
+        this.ctx.obsidian.registerEvent(
+            this.ctx.obsidian.getApp().vault.on("modify", file => {
+                if (file instanceof TFile)
+                    this.invalidate(file);
+            })
+        );
+
+        this.ctx.obsidian.registerEvent(
+            this.ctx.obsidian.getApp().vault.on("create", file => {
+                if (file instanceof TFile)
+                    this.invalidate(file);
+            })
+        );
+
+        this.ctx.obsidian.registerEvent(
+            this.ctx.obsidian.getApp().vault.on("delete", file => {
+                if (file instanceof TFile)
+                    this.remove(file);
+            })
+        );
+
+        this.ctx.obsidian.registerEvent(
+            this.ctx.obsidian.getApp().vault.on("rename", file => {
+                if (file instanceof TFile)
+                    this.invalidate(file);
+            })
+        );
     }
 
-    public parseCommitment(file: TFile, originCommitments: TFile[]): Commitment | null {
+    // public parseProject(file: TFile | undefined): Commitment | null {
+    //     if (!file) return null;
+    //
+    //     const fm = this.ctx.obsidian.getFrontmatter(file) as CommitmentFrontmatter;
+    //     if (fm?.type !== "commitment" || fm?.role !== "project") return null;
+    //
+    //     return this.parseCommitment(file);
+    // }
+    //
+
+    public parseCommitment(file: TFile): Commitment | null {
         const fm = this.ctx.obsidian.getFrontmatter(file) as CommitmentFrontmatter;
         if (fm?.type !== "commitment") return null;
 
@@ -70,56 +112,124 @@ export class CommitmentsProvider {
             status: fm.status,
             start: fm.start ? parseLocalDate(fm.start) : undefined,
             due: fm.due ? parseLocalDate(fm.due) : undefined,
-            class: this.ctx.classes.parseClass(this.ctx.obsidian.resolveLink(fm.class, file)) ?? undefined,
-            project: this.parseProject(this.ctx.obsidian.resolveLink(fm.project, file), [file, ...originCommitments]) ?? undefined,
+            classFile: fm.class,
+            projectFile: fm.project,
             actual_effort: fm.actual_effort != null ? Number(fm.actual_effort) : undefined,
         };
     }
 
-    private async buildCache() {
-        this.cache = new Map();
+    private reparse(file: TFile, notify: boolean | undefined = true) {
+        const parsed = this.parseCommitment(file);
 
-        for (const file of this.ctx.obsidian.getMarkdownFiles()) {
-            if (this.ctx.obsidian.isInTemplatesFolder(file)) continue;
+        if (!parsed) {
+            this.remove(file);
+            return;
+        }
 
-            const commitment = this.parseCommitment(file, []);
-            if (commitment) {
-                this.cache.set(file.path, commitment);
+        const existing = this.cache.get(file);
+
+        if (existing) {
+            const oldDue = existing.due;
+
+            Object.assign(existing, parsed);
+            this.cacheByPath.set(file.path, existing);
+
+            this.updateDayMembership(existing, oldDue);
+        } else {
+            this.cache.set(file, parsed);
+            this.cacheByPath.set(file.path, parsed);
+            this.addDayMembership(parsed);
+        }
+
+        if (notify) {
+            this.notify();
+        }
+    }
+
+    private updateDayMembership(
+        commitment: Commitment,
+        oldDue: Date | undefined
+    ) {
+        const oldKey = oldDue ? formatDate(oldDue) : undefined;
+        const newKey = commitment.due ? formatDate(commitment.due) : undefined;
+
+        if (oldKey === newKey) return;
+
+        if (oldKey) {
+            const oldCommitments = this.commitmentsByDay.get(oldKey);
+
+            if (oldCommitments) {
+                const next = oldCommitments.filter(c => c !== commitment);
+
+                if (next.length === 0) {
+                    this.commitmentsByDay.delete(oldKey);
+                } else {
+                    this.commitmentsByDay.set(oldKey, next);
+                }
+            }
+        }
+
+        if (newKey) {
+            const oldCommitments =
+                this.commitmentsByDay.get(newKey) ?? this.EMPTY_COMMITMENTS;
+
+            if (!oldCommitments.includes(commitment)) {
+                this.commitmentsByDay.set(newKey, [
+                    ...oldCommitments,
+                    commitment,
+                ]);
             }
         }
     }
 
-    public async getCommitment(path: string): Promise<Commitment | null> {
-        if (this.cache === null) {
-            await this.buildCache();
-        }
+    private addDayMembership(commitment: Commitment) {
+        if (!commitment.due) return;
 
-        return this.cache!.get(path) ?? null;
+        const key = formatDate(commitment.due);
+
+        const commitments =
+            this.commitmentsByDay.get(key) ?? this.EMPTY_COMMITMENTS;
+
+        if (!commitments.includes(commitment)) {
+            this.commitmentsByDay.set(key, [
+                ...commitments,
+                commitment,
+            ]);
+        }
     }
 
     public async getAllCommitments(): Promise<Commitment[]> {
-        if (this.cache === null) {
-            await this.buildCache();
-        }
-
-        return [...this.cache!.values()];
+        return [...this.cache.values()];
     }
 
-    //TODO: CACHE ASSUMES THINGS DONT CHANGE!! MUST FIX!!
-    public async getCommitments(date: Date): Promise<Commitment[]> {
-        const cacheKey = date.toDateString();
+    getCommitments(date: Date): readonly Commitment[] {
+        return (
+            this.commitmentsByDay.get(formatDate(date)) ??
+            this.EMPTY_COMMITMENTS
+        );
+    }
 
-        const cached = this.commitmentsByDayCache.get(cacheKey);
-        if (cached) {
-            return cached;
-        }
+    // public getCommitment(path: string): Promise<Commitment | null> {
+    //     return this.cache.get(path) ?? null;
+    // }
 
-        const commitments = (await this.getAllCommitments())
-            .filter(c => c.due?.toDateString() == cacheKey);
+    getClass(commitment: Commitment) {
+        if (!commitment.classFile) return;
 
-        this.commitmentsByDayCache.set(cacheKey, commitments);
+        return this.ctx.classes.getClass(commitment.classFile, commitment.file);
+    }
 
-        return commitments;
+    getProject(commitment: Commitment): Commitment | undefined {
+        if (!commitment.projectFile) return;
+
+        const file = this.ctx.obsidian.resolveLink(
+            commitment.projectFile,
+            commitment.file
+        );
+
+        if (!(file instanceof TFile)) return;
+
+        return this.cacheByPath.get(file.path);
     }
 
     public async createNewCommitment() {
@@ -148,12 +258,12 @@ export class CommitmentsProvider {
         return file;
     }
 
-    public async processNewCommitmentFrontmatter(file: TFile, fm: CommitmentFrontmatter) {
+    public async modifyCommitmentFrontmatter(file: TFile, fm: CommitmentFrontmatter) {
         await this.ctx.obsidian.getApp().fileManager.processFrontMatter(file, (frontmatter: CommitmentFrontmatter) => {
             frontmatter.type = fm.type ?? frontmatter.type;
             frontmatter.role = fm.role ?? frontmatter.role;
 
-            frontmatter.assigned = fm.assigned ?? toLocalISOString(new Date()) ?? frontmatter.assigned;
+            frontmatter.assigned = fm.assigned ?? frontmatter.assigned;
             frontmatter.status = fm.status ?? frontmatter.status;
 
             frontmatter.start = fm.start ?? frontmatter.start;
@@ -164,5 +274,54 @@ export class CommitmentsProvider {
 
             frontmatter.actual_effort = fm.actual_effort ?? frontmatter.actual_effort;
         });
+    }
+
+    subscribe(listener: () => void) {
+        this.listeners.add(listener);
+        return () => this.listeners.delete(listener);
+    }
+
+    private notify() {
+        for (const listener of this.listeners)
+            listener();
+
+        console.log("notifying a lot!!");
+    }
+
+    invalidate(file: TFile) {
+        clearTimeout(this.pending.get(file.path));
+
+        this.pending.set(file.path,
+            window.setTimeout(() => {
+                this.reparse(file);
+                this.pending.delete(file.path);
+            }, 100)
+        );
+    }
+
+    private remove(file: TFile) {
+        const commitment = this.cache.get(file);
+        if (!commitment) return;
+
+        if (commitment.due) {
+            const key = formatDate(commitment.due);
+
+            const commitments = this.commitmentsByDay.get(key);
+
+            if (commitments) {
+                const next = commitments.filter(c => c !== commitment);
+
+                if (next.length === 0) {
+                    this.commitmentsByDay.delete(key);
+                } else {
+                    this.commitmentsByDay.set(key, next);
+                }
+            }
+        }
+
+        this.cache.delete(file);
+        this.cacheByPath.delete(file.path);
+
+        this.notify();
     }
 }

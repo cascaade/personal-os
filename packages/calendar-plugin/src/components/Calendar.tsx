@@ -1,7 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { addMonths, CalendarFillMode, DAYS_OF_WEEK_TRUNC, getCalendarDays } from "@/util/date-utils";
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { addMonths, CalendarFillMode, DAYS_OF_WEEK_TRUNC, getCalendarDays, toLocalISOString } from "@/util/date-utils";
 import { concat } from "@/util/classname-utils";
 import Month from "@/components/Month";
+
+import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, } from "@dnd-kit/core";
+import { Commitment } from "@/services/CommitmentsProvider";
+import { ObsidianContext } from "@/views/CalendarView";
 
 export const MIN_ROW_HEIGHT = 120;
 export const ROW_HEIGHT_EASE_TIME_MS = 0;
@@ -21,6 +25,8 @@ function createLoadedMonth(first: Date, fillMode: CalendarFillMode) {
 }
 
 export function Calendar() {
+    const { calendarContext } = useContext(ObsidianContext)!;
+
     const [ months, setMonths ] = useState<LoadedMonth[]>(() => {
         const first = new Date();
         first.setDate(1);
@@ -274,6 +280,46 @@ export function Calendar() {
         container.scrollTop += afterTop - anchorTopRef.current;
     }, [optionDown]);
 
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 5, // don't start dragging on tiny movements
+            },
+        })
+    );
+
+    function handleDragEnd(event: DragEndEvent) {
+        const { active, over } = event;
+
+        if (!over) return;
+
+        const commitment = active.data.current?.commitment as Commitment | undefined;
+        const newDate = over.data.current?.date as Date | undefined;
+
+        if (!commitment || !newDate) return;
+
+        // modify values
+        let due = new Date();
+
+        if (commitment.due) {
+            due = new Date(commitment.due);
+            due.setFullYear(newDate.getFullYear(), newDate.getMonth(), newDate.getDate());
+        }
+
+        let start;
+
+        if (commitment.start) {
+            start = new Date(commitment.start);
+            start.setFullYear(newDate.getFullYear(), newDate.getMonth(), newDate.getDate());
+        }
+
+        // set frontmatter
+        calendarContext.commitments.modifyCommitmentFrontmatter(commitment.file, {
+            due: toLocalISOString(due),
+            start: start ? toLocalISOString(start) : undefined,
+        }).catch(console.error);
+    }
+
     return (
         <div className="calendar-view">
             <div className="calendar-header">
@@ -299,15 +345,22 @@ export function Calendar() {
                 </div>
             </div>
 
-            <div
-                className={ concat("calendar-table", optionDown && "option-down") }
-                ref={ scrollRef }
+            <DndContext
+                sensors={sensors}
+                // onDragStart={handleDragStart}
+                // onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
             >
-                { months.map((month, index) => (
-                    <Month key={ month.month.getTime() } loadedMonth={ month } monthRefs={ monthRefs } visibleMonth={ visibleMonth }
-                           index={ index } optionDown={optionDown}></Month>
-                )) }
-            </div>
+                <div
+                    className={ concat("calendar-table", optionDown && "option-down") }
+                    ref={ scrollRef }
+                >
+                    { months.map((month, index) => (
+                        <Month key={ month.month.getTime() } loadedMonth={ month } monthRefs={ monthRefs } visibleMonth={ visibleMonth }
+                               index={ index } optionDown={optionDown}></Month>
+                    )) }
+                </div>
+            </DndContext>
         </div>
     );
 }

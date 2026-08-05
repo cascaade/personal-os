@@ -11,7 +11,7 @@ export default class CalendarPlugin extends Plugin {
 
         this.registerView(
             VIEW_TYPE_CALENDAR,
-            (leaf) => new CalendarView(leaf, this.app, this.settings),
+            (leaf) => new CalendarView(leaf, this, this.settings),
         );
 
         const openCalendar = async () => {

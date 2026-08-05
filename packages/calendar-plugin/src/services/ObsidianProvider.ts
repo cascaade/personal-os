@@ -1,13 +1,17 @@
-import { App, parseLinktext, TFile, WorkspaceItem, WorkspaceLeaf } from "obsidian";
-import { Class } from "@/services/ClassProvider";
+import { App, EventRef, parseLinktext, TFile, WorkspaceItem, WorkspaceLeaf } from "obsidian";
 import { VIEW_TYPE_CALENDAR } from "@/views/CalendarView";
+import CalendarPlugin from "@/main";
 
 export class ObsidianProvider {
-    constructor(private app: App) {}
+    constructor(private app: App, private plugin: CalendarPlugin) {}
 
     // todo: get rid of for OOP
     public getApp(): App {
         return this.app;
+    }
+
+    public registerEvent(eventRef: EventRef) {
+        this.plugin.registerEvent(eventRef);
     }
 
     public resolveLink(link: unknown, source: TFile): TFile | undefined {

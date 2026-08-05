@@ -1,11 +1,13 @@
 import { concat } from "@/util/classname-utils";
-import { formatDate, minutesToTime, MONTHS_OF_YEAR_TRUNC } from "@/util/date-utils";
+import { formatDate, minutesToTime, MONTHS_OF_YEAR_TRUNC, toLocalISOString } from "@/util/date-utils";
 import { DayInfo } from "@/util/schedule-utils";
 import { Commitment } from "@/services/CommitmentsProvider";
-import { CSSProperties, memo, useContext, useEffect, useRef, useState } from "react";
+import { CSSProperties, memo, useCallback, useContext, useEffect, useRef, useSyncExternalStore } from "react";
 import { ObsidianContext } from "@/views/CalendarView";
 import { MIN_ROW_HEIGHT, ROW_HEIGHT_EASE_TIME_MS } from "@/components/Calendar";
 import { setTooltip } from "obsidian";
+import CommitmentEl from "./CommitmentEl";
+import { useDroppable } from "@dnd-kit/core";
 
 export interface DayProps {
     dayInfo: DayInfo;
@@ -13,14 +15,18 @@ export interface DayProps {
     optionDown: boolean;
 }
 
-const getPeriod = (c: Commitment) => {
-    return c.class?.period ?? c.project?.class?.period;
-}
-
 function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
     const { settings, calendarContext } = useContext(ObsidianContext)!;
 
-    const [ commitments, setCommitments ] = useState<Commitment[]>([]);
+    const getPeriod = (c: Commitment) => {
+        let classPeriod = calendarContext.commitments.getClass(c)?.period;
+        if (classPeriod) return classPeriod
+
+        let project = calendarContext.commitments.getProject(c);
+        if (!project) return;
+
+        return calendarContext.commitments.getClass(project)?.period;
+    }
 
     const tagRef = useRef<HTMLElement>(null);
 
@@ -34,14 +40,25 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
         });
     }, [ dayInfo ]);
 
-
     const dayStyles = { minHeight: `${ MIN_ROW_HEIGHT }px` } as CSSProperties;
     const blockStyles = { transition: `height ${ ROW_HEIGHT_EASE_TIME_MS }ms ease` } as CSSProperties;
 
-    useEffect(() => {
-        ( async () => setCommitments(await calendarContext.commitments?.getCommitments(dayInfo.date) ?? []) )()
-            .catch(console.error);
-    }, [ calendarContext.commitments, dayInfo.date ]);
+    const provider = calendarContext.commitments;
+
+    const subscribe = useCallback(
+        provider.subscribe.bind(provider),
+        [provider]
+    );
+
+    const getSnapshot = useCallback(
+        () => provider.getCommitments(dayInfo.date),
+        [provider, dayInfo.date]
+    );
+
+    const commitments = useSyncExternalStore(
+        subscribe,
+        getSnapshot
+    );
 
     const csWithoutClass = commitments.filter(c => {
         const period = getPeriod(c);
@@ -58,10 +75,20 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
             commitments.some(c => getPeriod(c) == block.period)
         );
 
+    const { setNodeRef, isOver } = useDroppable({
+        id: formatDate(dayInfo.date),
+        data: {
+            date: dayInfo.date,
+        },
+    });
+
+    console.log("rendering" + formatDate(dayInfo.date));
+
     const now = new Date();
 
     return (
-        <div className={ concat("calendar-day", dayInfo.extraneous?.type) } data-date={ dayInfo.date.toDateString() }
+        <div className={ concat("calendar-day", dayInfo.extraneous?.type, isOver && "drop-target") } data-date={ dayInfo.date.toDateString() }
+             ref={setNodeRef}
              style={ dayStyles }>
             <div className="day-header">
                 <div
@@ -95,13 +122,10 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
                                     key={ bi }
                                     style={ blockStyles }
                                     onClick={ () => {
-                                        calendarContext.classes.getClassByPeriod(block.period)
-                                            .then(async (c) => {
-                                                if (c) {
-                                                    await calendarContext.obsidian.openInRightPane(c.file);
-                                                }
-                                            })
-                                            .catch(console.error);
+                                        let c = calendarContext.classes.getClassByPeriod(block.period);
+                                        if (c) {
+                                            calendarContext.obsidian.openInRightPane(c.file).catch(console.error);
+                                        }
                                     } }
                                 >
                                     <div className="block-header">
@@ -120,27 +144,17 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
                                     </div>
                                     {
                                         cs.map((comm, ci) => (
-                                            <a
-                                                href={ comm.file.path }
-                                                key={ ci }
-                                                className={ concat("commitment", "internal-link") }
-                                                data-href={ comm.file.path }
-                                                onClick={ (e) => {
-                                                    e.preventDefault();
-                                                    calendarContext.obsidian.openNoteToRight(comm.file.path).catch(console.error);
-                                                } }
-                                            >
-                                                { comm.title }
-                                            </a>
+                                            <CommitmentEl comm={comm} key={ ci }></CommitmentEl>
                                         ))
                                     }
                                     { cs.length > 0 && (
                                         <div className={ concat("commitment", "new-commitment") } onClick={ () => {
                                             calendarContext.commitments.createNewCommitment()
                                                 .then(async (f) => {
-                                                    const c = await calendarContext.classes.getClassByPeriod(block.period);
-                                                    await calendarContext.commitments.processNewCommitmentFrontmatter(f, {
+                                                    const c = calendarContext.classes.getClassByPeriod(block.period);
+                                                    await calendarContext.commitments.modifyCommitmentFrontmatter(f, {
                                                         role: "event",
+                                                        assigned: toLocalISOString(new Date()),
                                                         due: formatDate(dayInfo.date),
                                                         class: c ? `[[${ c.file.path }]]` : ""
                                                     });
@@ -159,26 +173,16 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
                 <hr className={ concat(hoverShown && "hover-shown", aboveShown && "above-shown", belowShown && "bottom-shown") }/>
                 {
                     csWithoutClass.map((comm, ci) => (
-                        <a
-                            href={ comm.file.path }
-                            key={ ci }
-                            className={ concat("commitment", "internal-link") }
-                            data-href={ comm.file.path }
-                            onClick={ (e) => {
-                                e.preventDefault();
-                                calendarContext.obsidian.openNoteToRight(comm.file.path).catch(console.error);
-                            } }
-                        >
-                            { comm.title }
-                        </a>
+                        <CommitmentEl comm={comm} key={ ci }></CommitmentEl>
                     ))
                 }
                 <div className={ concat("commitment", "new-commitment") } onClick={ () => {
                     calendarContext.commitments.createNewCommitment().then(async (f) => {
-                        await calendarContext.commitments.processNewCommitmentFrontmatter(f, {
+                        await calendarContext.commitments.modifyCommitmentFrontmatter(f, {
                             role: "event",
+                            assigned: toLocalISOString(new Date()),
                             due: formatDate(dayInfo.date)
-                        })
+                        });
                         await calendarContext.obsidian.openInRightPane(f);
                     }).catch(console.error);
                 } }>

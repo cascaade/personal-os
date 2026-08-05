@@ -19,7 +19,7 @@ export type Class = {
     file: TFile;
     title: string;
 
-    period?: number;
+    period: number | null;
     subject?: string;
 
     school_year?: string;
@@ -27,9 +27,47 @@ export type Class = {
 }
 
 export class ClassProvider {
-    private cache: Map<string, Class> | null = null;
+    private cache = new Map<TFile, Class>();
+    private classesByPeriod = new Map<number, Class>();
 
-    constructor(private ctx: CalendarContext) {}
+    private listeners = new Set<() => void>();
+    private pending = new Map<string, number>();
+
+    constructor(private ctx: CalendarContext) {
+        for (const file of this.ctx.obsidian.getMarkdownFiles()) {
+            if (this.ctx.obsidian.isInTemplatesFolder(file)) continue;
+
+            this.reparse(file, false);
+        }
+
+        this.ctx.obsidian.registerEvent(
+            this.ctx.obsidian.getApp().vault.on("modify", file => {
+                if (file instanceof TFile)
+                    this.invalidate(file);
+            })
+        );
+
+        this.ctx.obsidian.registerEvent(
+            this.ctx.obsidian.getApp().vault.on("create", file => {
+                if (file instanceof TFile)
+                    this.invalidate(file);
+            })
+        );
+
+        this.ctx.obsidian.registerEvent(
+            this.ctx.obsidian.getApp().vault.on("delete", file => {
+                if (file instanceof TFile)
+                    this.remove(file);
+            })
+        );
+
+        this.ctx.obsidian.registerEvent(
+            this.ctx.obsidian.getApp().vault.on("rename", file => {
+                if (file instanceof TFile)
+                    this.invalidate(file);
+            })
+        );
+    }
 
     public parseClass(file: TFile | undefined) {
         if (!file) return null;
@@ -41,7 +79,6 @@ export class ClassProvider {
             type: "entity",
             role: "class",
             file: file,
-            title: file.basename,
             period: fm?.period ? parseInt(fm?.period) : undefined,
             subject: fm?.subject,
             school_year: fm?.school_year,
@@ -49,42 +86,100 @@ export class ClassProvider {
         } as Class;
     }
 
-    private async buildCache() {
-        this.cache = new Map();
+    private reparse(file: TFile, notify: boolean | undefined = true) {
+        const parsed = this.parseClass(file);
 
-        for (const file of this.ctx.obsidian.getMarkdownFiles()) {
-            if (this.ctx.obsidian.isInTemplatesFolder(file)) continue;
+        if (!parsed) {
+            this.remove(file);
+            return;
+        }
 
-            const clazz = this.parseClass(file);
-            if (clazz) {
-                this.cache.set(file.path, clazz);
-            }
+        const existing = this.cache.get(file);
+
+        if (existing) {
+            const oldPeriod = existing.period;
+
+            Object.assign(existing, parsed);
+
+            this.updatePeriodMembership(existing, oldPeriod);
+        } else {
+            this.cache.set(file, parsed);
+            this.addPeriodMembership(parsed);
+        }
+
+        if (notify) {
+            this.notify();
+            console.log("notifying!!")
         }
     }
 
-    public async getClass(path: string): Promise<Class | undefined> {
-        if (this.cache === null) {
-            await this.buildCache();
+    private addPeriodMembership(clazz: Class) {
+        if (clazz.period != null) {
+            this.classesByPeriod.set(clazz.period, clazz);
         }
-
-        return this.cache!.get(path);
     }
 
-    public async getClassByPeriod(period: number): Promise<Class | undefined> {
-        if (this.cache === null) {
-            await this.buildCache();
+    private updatePeriodMembership(
+        clazz: Class,
+        oldPeriod: number | null
+    ) {
+        if (oldPeriod === clazz.period) return;
+
+        if (oldPeriod != null) {
+            this.classesByPeriod.delete(oldPeriod);
         }
 
-        const result = [...this.cache!.values()].find(c => c.period === period);
-
-        return result;
+        if (clazz.period != null) {
+            this.classesByPeriod.set(clazz.period, clazz);
+        }
     }
 
-    public async getAllClasses(): Promise<Class[]> {
-        if (this.cache === null) {
-            await this.buildCache();
+    getClass(link: string, sourceFile: TFile): Class | undefined {
+        const file = this.ctx.obsidian.resolveLink(link, sourceFile);
+        if (!(file instanceof TFile)) return;
+
+        return this.cache.get(file);
+    }
+
+    getClassByPeriod(period: number): Class | undefined {
+        return this.classesByPeriod.get(period);
+    }
+
+    getAllClasses(): Class[] {
+        return [...this.cache.values()];
+    }
+
+    subscribe(listener: () => void) {
+        this.listeners.add(listener);
+        return () => this.listeners.delete(listener);
+    }
+
+    private notify() {
+        for (const listener of this.listeners)
+            listener();
+    }
+
+    invalidate(file: TFile) {
+        clearTimeout(this.pending.get(file.path));
+
+        this.pending.set(file.path,
+            window.setTimeout(() => {
+                this.reparse(file);
+                this.pending.delete(file.path);
+            }, 100)
+        );
+    }
+
+    private remove(file: TFile) {
+        const clazz = this.cache.get(file);
+        if (!clazz) return;
+
+        if (clazz.period != null) {
+            this.classesByPeriod.delete(clazz.period);
         }
 
-        return [...this.cache!.values()];
+        this.cache.delete(file);
+
+        this.notify();
     }
 }

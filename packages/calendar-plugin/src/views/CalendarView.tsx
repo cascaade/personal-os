@@ -1,11 +1,11 @@
 import { App, ItemView, WorkspaceLeaf } from "obsidian";
-import { Root, createRoot } from "react-dom/client";
+import { createRoot, Root } from "react-dom/client";
 import { createContext } from "react";
 
 import { Calendar } from "@/components/Calendar";
-import { CommitmentsProvider } from "@/services/CommitmentsProvider";
 import { CalendarContext } from "@/services/CalendarContext";
 import { CalendarSettings } from "@/settings";
+import CalendarPlugin from "@/main";
 
 export const VIEW_TYPE_CALENDAR = "calendar-view";
 
@@ -23,7 +23,7 @@ export class CalendarView extends ItemView {
 
     constructor(
         leaf: WorkspaceLeaf,
-        private plugin: App,
+        private plugin: CalendarPlugin,
         private settings: CalendarSettings
     ) {
         super(leaf);
@@ -44,11 +44,12 @@ export class CalendarView extends ItemView {
     async onOpen() {
         console.log("open")
         this.root = createRoot(this.contentEl);
-        this.calendarContext = new CalendarContext(this.app, this.settings);
+        this.calendarContext = new CalendarContext(this.plugin, this.settings);
 
         this.root.render(
-            <ObsidianContext.Provider value={ { app: this.plugin, calendarContext: this.calendarContext, settings: this.settings }}>
-                <Calendar />
+            <ObsidianContext.Provider
+                value={ { app: this.plugin.app, calendarContext: this.calendarContext, settings: this.settings } }>
+                <Calendar/>
             </ObsidianContext.Provider>,
         );
     }
