@@ -1,4 +1,4 @@
-import { CSSProperties, memo, useContext } from "react";
+import { CSSProperties, memo, useContext, useEffect, useRef, useState } from "react";
 import { concat } from "@/util/classname-utils";
 import { formatDate, minutesToTime, toLocalISOString } from "@/util/date-utils";
 import CommitmentEl from "@/components/CommitmentEl";
@@ -23,10 +23,84 @@ function ScheduleBlock({ commitments, block, dayInfo }: { commitments: readonly 
 
     const cs = commitments.filter(c => getPeriod(c) == block.period);
 
-    const now = new Date();
+    const getNowMinutes = () => {
+        const now = new Date();
+        const nowMinutes = new Date(now).getHours() * 60 + new Date(now).getMinutes();
 
-    const nowMinutes = ( now.getHours() * 60 + now.getMinutes() );
-    const isNow = nowMinutes >= block.from && nowMinutes <= block.to;
+        return nowMinutes;
+    }
+
+    const computeIsNow = (nowMinutes: number) => {
+        return nowMinutes >= block.from && nowMinutes <= block.to;
+    }
+
+    const nowMinutes = useRef(getNowMinutes());
+    const [isNow, setIsNow] = useState(false);
+    const [, setTick] = useState(0);
+
+    function isSameDay(a: Date, b: Date) {
+        return (
+            a.getFullYear() === b.getFullYear() &&
+            a.getMonth() === b.getMonth() &&
+            a.getDate() === b.getDate()
+        );
+    }
+
+    function startOfNextDay(date: Date) {
+        const next = new Date(date);
+        next.setHours(24, 0, 0, 0); // rolls to next midnight
+        return next;
+    }
+
+    useEffect(() => {
+        const today = new Date();
+        const blockDate = dayInfo.date;
+
+        // Case 1: block's day already passed — nothing to schedule
+        if (blockDate < today && !isSameDay(blockDate, today)) {
+            setIsNow(false);
+            return;
+        }
+
+        // Case 2: block's day hasn't arrived yet — wait for midnight rollover
+        if (!isSameDay(blockDate, today)) {
+            setIsNow(false);
+            const ms = startOfNextDay(today).getTime() - today.getTime();
+            const id = setTimeout(() => {
+                setTimeout(() => setTick(t => t + 1), ms);
+            }, ms);
+            return () => clearTimeout(id);
+        }
+
+        // Case 3: it's today — existing minute-based logic
+        function scheduleNext() {
+            const current = getNowMinutes();
+            nowMinutes.current = current;
+            setIsNow(computeIsNow(current));
+
+            let nextBoundary;
+            if (current < block.from) {
+                nextBoundary = block.from;
+            } else if (current <= block.to) {
+                nextBoundary = block.to + 1;
+            } else {
+                nextBoundary = null; // today's block is over, nothing left to schedule
+            }
+
+            if (nextBoundary === null) return null;
+
+            const now = new Date();
+            const ms =
+                (nextBoundary - current) * 60_000 -
+                now.getSeconds() * 1000 -
+                now.getMilliseconds();
+
+            return setTimeout(scheduleNext, ms);
+        }
+
+        const id = scheduleNext();
+        return () => id && clearTimeout(id);
+    }, [block.from, block.to, dayInfo.date]);
 
     const blockStyles = { transition: `height ${ ROW_HEIGHT_EASE_TIME_MS }ms ease` } as CSSProperties;
 

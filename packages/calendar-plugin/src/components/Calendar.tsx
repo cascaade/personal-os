@@ -15,7 +15,7 @@ import {
     DragEndEvent,
     DragOverlay,
     MouseSensor,
-    PointerSensor,
+    PointerSensor, pointerWithin,
     useSensor,
     useSensors,
 } from "@dnd-kit/core";
@@ -387,6 +387,7 @@ export function Calendar() {
             </div>
 
             <DndContext
+                collisionDetection={pointerWithin}
                 sensors={sensors}
                 onDragStart={({ active }) => {
                     setActiveCommitment(active.data.current?.commitment as Commitment | undefined ?? null);
