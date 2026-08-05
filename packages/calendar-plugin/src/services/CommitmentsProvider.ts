@@ -80,9 +80,9 @@ export class CommitmentsProvider {
         );
 
         this.ctx.obsidian.registerEvent(
-            this.ctx.obsidian.getApp().vault.on("rename", file => {
+            this.ctx.obsidian.getApp().vault.on("rename", (file, oldPath) => {
                 if (file instanceof TFile)
-                    this.invalidate(file);
+                    this.invalidate(file, oldPath);
             })
         );
     }
@@ -116,7 +116,7 @@ export class CommitmentsProvider {
         };
     }
 
-    private reparse(file: TFile, notify: boolean | undefined = true) {
+    private reparse(file: TFile, notify: boolean | undefined = true, oldPath?: string) {
         const parsed = this.parseCommitment(file);
 
         if (!parsed) {
@@ -127,12 +127,14 @@ export class CommitmentsProvider {
         const existing = this.cache.get(file);
 
         if (existing) {
-            const oldDue = existing.due;
+            if (oldPath) {
+                this.cacheByPath.delete(oldPath);
+            }
 
-            Object.assign(existing, parsed);
-            this.cacheByPath.set(file.path, existing);
+            this.cache.set(file, parsed);
+            this.cacheByPath.set(file.path, parsed);
 
-            this.updateDayMembership(existing, oldDue, !!notify);
+            this.updateDayMembership(existing, parsed, !!notify);
         } else {
             this.cache.set(file, parsed);
             this.cacheByPath.set(file.path, parsed);
@@ -141,20 +143,46 @@ export class CommitmentsProvider {
     }
 
     private updateDayMembership(
-        commitment: Commitment,
-        oldDue: Date | undefined,
+        oldCommitment: Commitment,
+        newCommitment: Commitment,
         notify: boolean,
     ) {
-        const oldKey = oldDue ? formatDate(oldDue) : undefined;
-        const newKey = commitment.due ? formatDate(commitment.due) : undefined;
+        const oldKey = oldCommitment.due
+            ? formatDate(oldCommitment.due)
+            : undefined;
 
-        if (oldKey === newKey) return;
+        const newKey = newCommitment.due
+            ? formatDate(newCommitment.due)
+            : undefined;
 
+        // Same day: replace the object in-place (immutably)
+        if (oldKey === newKey) {
+            if (newKey) {
+                const commitments = this.commitmentsByDay.get(newKey);
+
+                if (commitments) {
+                    this.commitmentsByDay.set(
+                        newKey,
+                        commitments.map(c =>
+                            c === oldCommitment ? newCommitment : c
+                        )
+                    );
+                }
+
+                if (notify) {
+                    this.notifyDay(newKey);
+                }
+            }
+
+            return;
+        }
+
+        // Remove from old day
         if (oldKey) {
-            const oldCommitments = this.commitmentsByDay.get(oldKey);
+            const commitments = this.commitmentsByDay.get(oldKey);
 
-            if (oldCommitments) {
-                const next = oldCommitments.filter(c => c !== commitment);
+            if (commitments) {
+                const next = commitments.filter(c => c !== oldCommitment);
 
                 if (next.length === 0) {
                     this.commitmentsByDay.delete(oldKey);
@@ -163,23 +191,24 @@ export class CommitmentsProvider {
                 }
             }
 
-            if (notify)
+            if (notify) {
                 this.notifyDay(oldKey);
+            }
         }
 
+        // Add to new day
         if (newKey) {
-            const oldCommitments =
+            const commitments =
                 this.commitmentsByDay.get(newKey) ?? this.EMPTY_COMMITMENTS;
 
-            if (!oldCommitments.includes(commitment)) {
-                this.commitmentsByDay.set(newKey, [
-                    ...oldCommitments,
-                    commitment,
-                ]);
-            }
+            this.commitmentsByDay.set(newKey, [
+                ...commitments,
+                newCommitment,
+            ]);
 
-            if (notify)
+            if (notify) {
                 this.notifyDay(newKey);
+            }
         }
     }
 
@@ -309,12 +338,12 @@ export class CommitmentsProvider {
         }
     }
 
-    invalidate(file: TFile) {
+    invalidate(file: TFile, oldPath?: string) {
         clearTimeout(this.pending.get(file.path));
 
         this.pending.set(file.path,
             window.setTimeout(() => {
-                this.reparse(file);
+                this.reparse(file, true, oldPath);
                 this.pending.delete(file.path);
             }, 100)
         );
