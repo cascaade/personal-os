@@ -1,6 +1,7 @@
 import { TFile } from "obsidian";
 import { formatDate, parseLocalDate } from "@/util/date-utils";
 import { CalendarContext } from "@/services/CalendarContext";
+import { ConfirmModal } from "@/obsidian/ConfirmModal";
 
 type CommitmentFrontmatter = {
     type?: string;
@@ -375,5 +376,19 @@ export class CommitmentsProvider {
         if (commitment.due) {
             this.notifyDay(formatDate(commitment.due));
         }
+    }
+
+    public clearAllCommitments(day: Date) {
+        new ConfirmModal(
+            this.ctx.obsidian.getApp(),
+            `Delete all commitments on ${day.toDateString()}? This cannot be undone.`,
+            () => {
+                const commitments = this.getCommitments(day);
+                commitments.forEach((commitment) => {
+                        this.ctx.obsidian.getApp().fileManager.trashFile(commitment.file).catch(console.error)
+                    }
+                )
+            }
+        ).open();
     }
 }

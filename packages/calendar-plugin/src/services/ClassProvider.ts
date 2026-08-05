@@ -99,7 +99,7 @@ export class ClassProvider {
         if (existing) {
             const oldPeriod = existing.period;
 
-            Object.assign(existing, parsed);
+            this.cache.set(file, parsed);
 
             this.updatePeriodMembership(existing, oldPeriod);
         } else {
@@ -122,14 +122,12 @@ export class ClassProvider {
         clazz: Class,
         oldPeriod: number | null
     ) {
-        if (oldPeriod === clazz.period) return;
+        if (clazz.period != null) {
+            this.classesByPeriod.set(clazz.period, clazz);
+        }
 
         if (oldPeriod != null) {
             this.classesByPeriod.delete(oldPeriod);
-        }
-
-        if (clazz.period != null) {
-            this.classesByPeriod.set(clazz.period, clazz);
         }
     }
 

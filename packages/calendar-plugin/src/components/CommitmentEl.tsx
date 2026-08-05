@@ -1,8 +1,9 @@
 import { concat } from "@/util/classname-utils";
-import { memo, useContext } from "react";
+import React, { memo, useContext } from "react";
 import { Commitment } from "@/services/CommitmentsProvider";
 import { ObsidianContext } from "@/views/CalendarView";
 import { useDraggable } from "@dnd-kit/core";
+import { Menu } from "obsidian";
 
 function CommitmentEl({ commitment, draggable }: { commitment: Commitment, draggable: boolean }) {
     const { calendarContext } = useContext(ObsidianContext)!;
@@ -28,6 +29,30 @@ function CommitmentEl({ commitment, draggable }: { commitment: Commitment, dragg
             opacity: isDragging ? 0 : 1,
         };
 
+        const onContextMenu = (e: React.MouseEvent) => {
+            e.preventDefault();
+
+            if (e.ctrlKey) {
+                calendarContext.obsidian.openNoteToRight(commitment.file.path)
+                    .catch(console.error);
+                return;
+            }
+
+            const menu = new Menu();
+
+            menu.addItem(item =>
+                item
+                    .setTitle("Delete")
+                    .setIcon("delete")
+                    .onClick(() => {
+                        calendarContext.obsidian.getApp().fileManager.promptForDeletion(commitment.file)
+                            .catch(console.error);
+                    })
+            );
+
+            menu.showAtMouseEvent(e.nativeEvent);
+        };
+
         return (<a
             href={ commitment.file.path }
             className={ concat("commitment", "internal-link") }
@@ -40,6 +65,7 @@ function CommitmentEl({ commitment, draggable }: { commitment: Commitment, dragg
                 e.preventDefault();
                 calendarContext.obsidian.openNoteToRight(commitment.file.path).catch(console.error);
             } }
+            onContextMenu={ onContextMenu }
         >
             { commitment.title }
         </a>);
@@ -49,10 +75,6 @@ function CommitmentEl({ commitment, draggable }: { commitment: Commitment, dragg
         href={ commitment.file.path }
         className={ concat("commitment", "dragging") }
         data-href={ commitment.file.path }
-        onClick={ (e) => {
-            e.preventDefault();
-            calendarContext.obsidian.openNoteToRight(commitment.file.path).catch(console.error);
-        } }
     >
         { commitment.title }
     </a>);

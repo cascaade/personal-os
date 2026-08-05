@@ -7,6 +7,8 @@ export interface CalendarSettings {
     showAmPmDisplayTime: boolean;
     commitmentTemplateLocation: string;
     newCommitmentDefaultFolder: string;
+    dailyTemplateLocation: string;
+    newDailyDefaultFolder: string;
 }
 
 export const DEFAULT_SETTINGS: CalendarSettings = {
@@ -15,6 +17,8 @@ export const DEFAULT_SETTINGS: CalendarSettings = {
     showAmPmDisplayTime: false,
     commitmentTemplateLocation: 'Templates/Commitment.md',
     newCommitmentDefaultFolder: 'Commitments/',
+    dailyTemplateLocation: 'Templates/Daily.md',
+    newDailyDefaultFolder: 'Daily/'
 };
 
 export class CalendarSettingTab extends PluginSettingTab {

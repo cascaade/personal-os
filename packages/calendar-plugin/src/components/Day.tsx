@@ -2,13 +2,23 @@ import { concat } from "@/util/classname-utils";
 import { formatDate, minutesToTime, MONTHS_OF_YEAR_TRUNC, toLocalISOString } from "@/util/date-utils";
 import { DayInfo } from "@/util/schedule-utils";
 import { Commitment } from "@/services/CommitmentsProvider";
-import { CSSProperties, memo, useCallback, useContext, useEffect, useRef, useSyncExternalStore } from "react";
+import React, {
+    CSSProperties,
+    memo,
+    MouseEventHandler,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useSyncExternalStore
+} from "react";
 import { ObsidianContext } from "@/views/CalendarView";
 import { MIN_ROW_HEIGHT, ROW_HEIGHT_EASE_TIME_MS } from "@/components/Calendar";
-import { setTooltip } from "obsidian";
+import { Menu, setTooltip } from "obsidian";
 import CommitmentEl from "./CommitmentEl";
 import { useDroppable } from "@dnd-kit/core";
 import ScheduleBlock from "@/components/ScheduleBlock";
+import { ConfirmModal } from "@/obsidian/ConfirmModal";
 
 export interface DayProps {
     dayInfo: DayInfo;
@@ -99,7 +109,7 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
         }).catch(console.error);
     }
 
-    const onContextMenu = (e: MouseEvent) => {
+    const onNewContextMenu = (e: React.MouseEvent) => {
         if (e.ctrlKey) {
             e.preventDefault();
             e.stopPropagation();
@@ -108,10 +118,42 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
         }
     }
 
+    const onContextMenu = (e: React.MouseEvent) => {
+        e.preventDefault();
+
+        const menu = new Menu();
+
+        menu.addItem(item =>
+            item
+                .setTitle("Open daily note")
+                .setIcon("calendar")
+                .onClick(() => {
+                    calendarContext.dailies.getOrCreateNewDailyNote(dayInfo.date)
+                        .then(file => calendarContext.obsidian.openInRightPane(file))
+                        .catch(console.error);
+                })
+        );
+
+        menu.addSeparator();
+
+        menu.addItem(item =>
+            item
+                .setTitle("Clear")
+                .setIcon("delete")
+                .onClick(() => {
+                    calendarContext.commitments.clearAllCommitments(dayInfo.date);
+                })
+        );
+
+        menu.showAtMouseEvent(e.nativeEvent);
+    };
+
     return (
         <div className={ concat("calendar-day", dayInfo.extraneous?.type, isOver && "drop-target") } data-date={ dayInfo.date.toDateString() }
              ref={setNodeRef}
-             style={ dayStyles }>
+             style={ dayStyles }
+             onContextMenu={onContextMenu}
+        >
             <div className="day-header">
                 <div
                     className={ concat("day-number-container", thisMonth && "this-month", dayInfo.date.toDateString() == now.toDateString() && "today") }>
@@ -141,7 +183,7 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
                         <CommitmentEl commitment={comm} draggable={true} key={ ci }></CommitmentEl>
                     ))
                 }
-                <div className={ concat("commitment", "new-commitment") } onClick={ onNewCommitment } onContextMenu={onContextMenu}>
+                <div className={ concat("commitment", "new-commitment") } onClick={ onNewCommitment } onContextMenu={onNewContextMenu}>
                     +
                 </div>
             </div>
