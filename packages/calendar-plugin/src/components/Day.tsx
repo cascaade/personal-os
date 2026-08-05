@@ -145,7 +145,7 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
                                     </div>
                                     {
                                         cs.map((comm, ci) => (
-                                            <CommitmentEl comm={comm} key={ ci }></CommitmentEl>
+                                            <CommitmentEl commitment={comm} draggable={true} key={ ci }></CommitmentEl>
                                         ))
                                     }
                                     { cs.length > 0 && (
@@ -174,7 +174,7 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
                 <hr className={ concat(hoverShown && "hover-shown", aboveShown && "above-shown", belowShown && "bottom-shown") }/>
                 {
                     csWithoutClass.map((comm, ci) => (
-                        <CommitmentEl comm={comm} key={ ci }></CommitmentEl>
+                        <CommitmentEl commitment={comm} draggable={true} key={ ci }></CommitmentEl>
                     ))
                 }
                 <div className={ concat("commitment", "new-commitment") } onClick={ () => {

@@ -3,9 +3,19 @@ import { addMonths, CalendarFillMode, DAYS_OF_WEEK_TRUNC, getCalendarDays, toLoc
 import { concat } from "@/util/classname-utils";
 import Month from "@/components/Month";
 
-import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, } from "@dnd-kit/core";
+import {
+    DndContext,
+    DragEndEvent,
+    DragOverlay,
+    MouseSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from "@dnd-kit/core";
 import { Commitment } from "@/services/CommitmentsProvider";
 import { ObsidianContext } from "@/views/CalendarView";
+import { log } from "node:util";
+import CommitmentEl from "@/components/CommitmentEl";
 
 export const MIN_ROW_HEIGHT = 120;
 export const ROW_HEIGHT_EASE_TIME_MS = 0;
@@ -251,10 +261,10 @@ export function Calendar() {
         };
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Alt") captureAnchor(true);
+            if (e.key === "Control") captureAnchor(true);
         };
         const handleKeyUp = (e: KeyboardEvent) => {
-            if (e.key === "Alt") captureAnchor(false);
+            if (e.key === "Control") captureAnchor(false);
         };
         const handleBlur = () => setOptionDown(false);
 
@@ -320,6 +330,15 @@ export function Calendar() {
         }).catch(console.error);
     }
 
+    const [activeCommitment, setActiveCommitment] = useState<Commitment | null>(null);
+
+    const rect = scrollRef.current
+        ?.closest(".workspace-tab-container")
+        ?.getBoundingClientRect();
+
+    const offsetX = rect?.left ?? 0;
+    const offsetY = rect?.top ?? 0;
+
     return (
         <div className="calendar-view">
             <div className="calendar-header">
@@ -347,9 +366,14 @@ export function Calendar() {
 
             <DndContext
                 sensors={sensors}
-                // onDragStart={handleDragStart}
-                // onDragOver={handleDragOver}
-                onDragEnd={handleDragEnd}
+                onDragStart={({ active }) => {
+                    setActiveCommitment(active.data.current?.commitment as Commitment | undefined ?? null);
+                }}
+                onDragEnd={(event) => {
+                    setActiveCommitment(null);
+                    handleDragEnd(event);
+                }}
+                onDragCancel={() => setActiveCommitment(null)}
             >
                 <div
                     className={ concat("calendar-table", optionDown && "option-down") }
@@ -360,6 +384,21 @@ export function Calendar() {
                                index={ index } optionDown={optionDown}></Month>
                     )) }
                 </div>
+
+                <DragOverlay
+                    dropAnimation={null}
+                    modifiers={[
+                        ({transform}) => ({
+                            ...transform,
+                            x: transform.x - offsetX,
+                            y: transform.y - offsetY,
+                        }),
+                    ]}
+                >
+                    {activeCommitment && (
+                        <CommitmentEl draggable={false} commitment={activeCommitment} />
+                    )}
+                </DragOverlay>
             </DndContext>
         </div>
     );

@@ -236,6 +236,12 @@ a.commitment {
     padding: var(--size-4-1) var(--size-4-2);
     border-radius: var(--radius-m);
     margin-bottom: var(--size-4-1);
+
+    touch-action: none;
+}
+
+.commitment.dragging {
+    font-size: .9em;
 }
 
 .commitment.new-commitment {
