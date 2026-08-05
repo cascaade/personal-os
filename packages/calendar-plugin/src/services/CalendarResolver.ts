@@ -1,5 +1,6 @@
 import schedules from "@/mock/schedules.json";
 import { collapseBlockSchedule, DayInfo, parseBlockSchedule, Schedule, sortBlockSchedule } from "@/util/schedule-utils";
+import { formatDate } from "@/util/date-utils";
 
 class CalendarResolver {
     private cache = new Map<string, DayInfo>();
@@ -26,7 +27,7 @@ class CalendarResolver {
 
         let collapse = schedule.rotation.collapse.enabled && schedule.rotation.collapse.naming;
 
-        const dateKey = date.toISOString().split("T")[0];
+        const dateKey = formatDate(date);
 
         // Handle explicit overrides first
         const override = schedule.extraneous.find(

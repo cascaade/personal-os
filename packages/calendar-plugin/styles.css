@@ -46,6 +46,10 @@
     padding: var(--size-4-3) var(--size-4-1);
 }
 
+.to-today-btn {
+    cursor: pointer;
+}
+
 .calendar-labels {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -203,6 +207,10 @@
         display: block;
     }
 
+    &.hover-shown {
+        display: block;
+    }
+
     &.above-shown.bottom-shown {
         opacity: 1;
     }
@@ -271,7 +279,7 @@ a.commitment {
 
 .schedule-block .commitment {
     background-color: var(--background-secondary-alt);
-    padding: var(--size-2-1) var(--size-2-2);
+    padding: var(--size-2-1) var(--size-2-3);
     border-radius: var(--radius-s);
 
     &.new-commitment {
@@ -288,6 +296,7 @@ a.commitment {
     padding: var(--size-2-2);
     border-radius: var(--radius-m);
     border: 1px solid var(--background-modifier-border);
+    cursor: grab;
 
     margin-bottom: var(--size-4-1);
 
