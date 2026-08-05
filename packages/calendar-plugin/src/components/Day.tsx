@@ -8,6 +8,7 @@ import { MIN_ROW_HEIGHT, ROW_HEIGHT_EASE_TIME_MS } from "@/components/Calendar";
 import { setTooltip } from "obsidian";
 import CommitmentEl from "./CommitmentEl";
 import { useDroppable } from "@dnd-kit/core";
+import ScheduleBlock from "@/components/ScheduleBlock";
 
 export interface DayProps {
     dayInfo: DayInfo;
@@ -41,7 +42,6 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
     }, [ dayInfo ]);
 
     const dayStyles = { minHeight: `${ MIN_ROW_HEIGHT }px` } as CSSProperties;
-    const blockStyles = { transition: `height ${ ROW_HEIGHT_EASE_TIME_MS }ms ease` } as CSSProperties;
 
     const provider = calendarContext.commitments;
 
@@ -81,6 +81,7 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
     const { setNodeRef, isOver } = useDroppable({
         id: formatDate(dayInfo.date),
         data: {
+            type: "day",
             date: dayInfo.date,
         },
     });
@@ -111,64 +112,7 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
             <div className="day-container">
                 {
                     dayInfo.blocks.map((block, bi) => (
-                        ( () => {
-                            const cs = commitments.filter(c => getPeriod(c) == block.period);
-
-                            const nowMinutes = ( now.getHours() * 60 + now.getMinutes() );
-                            const isNow = nowMinutes >= block.from && nowMinutes <= block.to;
-
-                            return (
-                                <div
-                                    className={ concat("schedule-block", cs.length === 0 && "empty-block", isNow && "now") }
-                                    key={ bi }
-                                    style={ blockStyles }
-                                    onClick={ () => {
-                                        let c = calendarContext.classes.getClassByPeriod(block.period);
-                                        if (c) {
-                                            calendarContext.obsidian.openInRightPane(c.file).catch(console.error);
-                                        }
-                                    } }
-                                >
-                                    <div className="block-header">
-                                        <span className="block-period">{ block.period }</span>
-                                        <span className={ "block-time" }>{
-                                            minutesToTime(
-                                                block.from,
-                                                settings.twentyFourHourDisplayTime,
-                                                settings.showAmPmDisplayTime
-                                            ) + " - " + minutesToTime(
-                                                block.to,
-                                                settings.twentyFourHourDisplayTime,
-                                                settings.showAmPmDisplayTime
-                                            )
-                                        }</span>
-                                    </div>
-                                    {
-                                        cs.map((comm, ci) => (
-                                            <CommitmentEl commitment={comm} draggable={true} key={ ci }></CommitmentEl>
-                                        ))
-                                    }
-                                    { cs.length > 0 && (
-                                        <div className={ concat("commitment", "new-commitment") } onClick={ () => {
-                                            calendarContext.commitments.createNewCommitment()
-                                                .then(async (f) => {
-                                                    const c = calendarContext.classes.getClassByPeriod(block.period);
-                                                    await calendarContext.commitments.modifyCommitmentFrontmatter(f, {
-                                                        role: "event",
-                                                        assigned: toLocalISOString(new Date()),
-                                                        due: formatDate(dayInfo.date),
-                                                        class: c ? `[[${ c.file.path }]]` : ""
-                                                    });
-                                                    await calendarContext.obsidian.openInRightPane(f);
-                                                })
-                                                .catch(console.error);
-                                        } }>
-                                            +
-                                        </div>
-                                    ) }
-                                </div>
-                            )
-                        } )()
+                        <ScheduleBlock block={ block } key={ bi } commitments={ commitments } dayInfo={dayInfo}></ScheduleBlock>
                     ))
                 }
                 <hr className={ concat(hoverShown && "hover-shown", aboveShown && "above-shown", belowShown && "bottom-shown") }/>

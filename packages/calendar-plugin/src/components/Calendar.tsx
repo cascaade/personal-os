@@ -1,5 +1,12 @@
 import { useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { addMonths, CalendarFillMode, DAYS_OF_WEEK_TRUNC, getCalendarDays, toLocalISOString } from "@/util/date-utils";
+import {
+    addMonths,
+    CalendarFillMode,
+    DAYS_OF_WEEK_TRUNC,
+    formatDate,
+    getCalendarDays,
+    toLocalISOString
+} from "@/util/date-utils";
 import { concat } from "@/util/classname-utils";
 import Month from "@/components/Month";
 
@@ -300,15 +307,17 @@ export function Calendar() {
 
     function handleDragEnd(event: DragEndEvent) {
         const { active, over } = event;
+        const activeData = active?.data.current;
+        const overData = over?.data.current as { type: string, date?: Date, period?: number };
 
-        if (!over) return;
+        if (!activeData || !overData) return;
 
-        const commitment = active.data.current?.commitment as Commitment | undefined;
-        const newDate = over.data.current?.date as Date | undefined;
+        const commitment = activeData.commitment as Commitment | undefined;
+        const newDate = overData.date;
 
         if (!commitment || !newDate) return;
 
-        // modify values
+        // modify date values
         let due = new Date();
 
         if (commitment.due) {
@@ -324,10 +333,23 @@ export function Calendar() {
         }
 
         // set frontmatter
-        calendarContext.commitments.modifyCommitmentFrontmatter(commitment.file, {
-            due: toLocalISOString(due),
-            start: start ? toLocalISOString(start) : undefined,
-        }).catch(console.error);
+        if (overData.type === "period") {
+            const clazz = calendarContext.classes.getClassByPeriod(overData.period!);
+
+            calendarContext.commitments.modifyCommitmentFrontmatter(commitment.file, {
+                due: toLocalISOString(due),
+                start: "",
+                class: clazz ? `[[${ clazz.file.path }]]` : "",
+            }).catch(console.error);
+        }
+
+        if (overData.type === "day") {
+            calendarContext.commitments.modifyCommitmentFrontmatter(commitment.file, {
+                due: toLocalISOString(due),
+                start: start ? toLocalISOString(start) : undefined,
+                class: (commitment.due?.toDateString() === due.toDateString()) ? "" : undefined,
+            }).catch(console.error);
+        }
     }
 
     const [activeCommitment, setActiveCommitment] = useState<Commitment | null>(null);
