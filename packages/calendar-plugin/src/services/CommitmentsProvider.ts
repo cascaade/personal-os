@@ -46,7 +46,7 @@ export class CommitmentsProvider {
 
     private readonly EMPTY_COMMITMENTS: readonly Commitment[] = [];
 
-    private listeners = new Set<() => void>();
+    private listenersByDay = new Map<string, Set<() => void>>();
     private pending = new Map<string, number>();
 
     constructor(private ctx: CalendarContext) {
@@ -56,8 +56,6 @@ export class CommitmentsProvider {
             if (this.ctx.obsidian.isInTemplatesFolder(file)) continue;
 
             this.reparse(file, false);
-
-            console.log("e")
         }
 
         this.ctx.obsidian.registerEvent(
@@ -134,21 +132,18 @@ export class CommitmentsProvider {
             Object.assign(existing, parsed);
             this.cacheByPath.set(file.path, existing);
 
-            this.updateDayMembership(existing, oldDue);
+            this.updateDayMembership(existing, oldDue, !!notify);
         } else {
             this.cache.set(file, parsed);
             this.cacheByPath.set(file.path, parsed);
-            this.addDayMembership(parsed);
-        }
-
-        if (notify) {
-            this.notify();
+            this.addDayMembership(parsed, !!notify);
         }
     }
 
     private updateDayMembership(
         commitment: Commitment,
-        oldDue: Date | undefined
+        oldDue: Date | undefined,
+        notify: boolean,
     ) {
         const oldKey = oldDue ? formatDate(oldDue) : undefined;
         const newKey = commitment.due ? formatDate(commitment.due) : undefined;
@@ -167,6 +162,9 @@ export class CommitmentsProvider {
                     this.commitmentsByDay.set(oldKey, next);
                 }
             }
+
+            if (notify)
+                this.notifyDay(oldKey);
         }
 
         if (newKey) {
@@ -179,10 +177,13 @@ export class CommitmentsProvider {
                     commitment,
                 ]);
             }
+
+            if (notify)
+                this.notifyDay(newKey);
         }
     }
 
-    private addDayMembership(commitment: Commitment) {
+    private addDayMembership(commitment: Commitment, notify: boolean) {
         if (!commitment.due) return;
 
         const key = formatDate(commitment.due);
@@ -196,6 +197,9 @@ export class CommitmentsProvider {
                 commitment,
             ]);
         }
+
+        if (notify)
+            this.notifyDay(key);
     }
 
     public async getAllCommitments(): Promise<Commitment[]> {
@@ -276,16 +280,33 @@ export class CommitmentsProvider {
         });
     }
 
-    subscribe(listener: () => void) {
-        this.listeners.add(listener);
-        return () => this.listeners.delete(listener);
+    subscribe(key: string, listener: () => void) {
+        let listeners = this.listenersByDay.get(key);
+
+        if (!listeners) {
+            listeners = new Set();
+            this.listenersByDay.set(key, listeners);
+        }
+
+        listeners.add(listener);
+
+        return () => {
+            listeners.delete(listener);
+
+            if (listeners.size === 0) {
+                this.listenersByDay.delete(key);
+            }
+        };
     }
 
-    private notify() {
-        for (const listener of this.listeners)
-            listener();
+    private notifyDay(key: string) {
+        const listeners = this.listenersByDay.get(key);
 
-        console.log("notifying a lot!!");
+        if (!listeners) return;
+
+        for (const listener of listeners) {
+            listener();
+        }
     }
 
     invalidate(file: TFile) {
@@ -322,6 +343,8 @@ export class CommitmentsProvider {
         this.cache.delete(file);
         this.cacheByPath.delete(file.path);
 
-        this.notify();
+        if (commitment.due) {
+            this.notifyDay(formatDate(commitment.due));
+        }
     }
 }

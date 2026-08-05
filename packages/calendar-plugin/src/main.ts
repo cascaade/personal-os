@@ -1,5 +1,5 @@
-import { Editor, ItemView, MarkdownFileInfo, MarkdownView, Modal, Notice, Plugin, WorkspaceLeaf, } from 'obsidian';
-import { DEFAULT_SETTINGS, CalendarSettings, CalendarSettingTab, } from './settings';
+import { ItemView, Plugin, WorkspaceLeaf, } from 'obsidian';
+import { CalendarSettings, CalendarSettingTab, DEFAULT_SETTINGS, } from './settings';
 import { CalendarView, VIEW_TYPE_CALENDAR } from "./views/CalendarView";
 
 export default class CalendarPlugin extends Plugin {

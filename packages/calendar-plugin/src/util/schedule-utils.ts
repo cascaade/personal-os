@@ -1,4 +1,3 @@
-import schedules from "@/mock/schedules.json";
 import { timeToMinutes } from "@/util/date-utils";
 
 export type Block = {

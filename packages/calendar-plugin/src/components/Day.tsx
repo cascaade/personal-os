@@ -45,9 +45,12 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
 
     const provider = calendarContext.commitments;
 
+    const key = formatDate(dayInfo.date);
+
     const subscribe = useCallback(
-        provider.subscribe.bind(provider),
-        [provider]
+        (listener: () => void) =>
+            provider.subscribe(key, listener),
+        [provider, key]
     );
 
     const getSnapshot = useCallback(
@@ -81,8 +84,6 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
             date: dayInfo.date,
         },
     });
-
-    console.log("rendering" + formatDate(dayInfo.date));
 
     const now = new Date();
 

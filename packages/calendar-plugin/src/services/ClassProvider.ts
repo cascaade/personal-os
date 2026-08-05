@@ -1,4 +1,4 @@
-import { App, parseLinktext, TFile } from "obsidian";
+import { TFile } from "obsidian";
 import { CalendarContext } from "@/services/CalendarContext";
 
 type ClassFrontmatter = {
@@ -109,7 +109,6 @@ export class ClassProvider {
 
         if (notify) {
             this.notify();
-            console.log("notifying!!")
         }
     }
 

@@ -1,6 +1,5 @@
 import { ClassProvider } from "@/services/ClassProvider";
 import { ObsidianProvider } from "@/services/ObsidianProvider";
-import { App } from "obsidian";
 import { CommitmentsProvider } from "@/services/CommitmentsProvider";
 import { CalendarSettings } from "@/settings";
 import CalendarPlugin from "@/main";
