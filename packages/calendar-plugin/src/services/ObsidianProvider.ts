@@ -5,6 +5,11 @@ import { VIEW_TYPE_CALENDAR } from "@/views/CalendarView";
 export class ObsidianProvider {
     constructor(private app: App) {}
 
+    // todo: get rid of for OOP
+    public getApp(): App {
+        return this.app;
+    }
+
     public resolveLink(link: unknown, source: TFile): TFile | undefined {
         if (typeof link !== "string") return undefined;
 

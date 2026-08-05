@@ -1,6 +1,5 @@
-import { App, parseLinktext, TFile } from "obsidian";
-import { parseLocalDate } from "@/util/date-utils";
-import { ObsidianProvider } from "@/services/ObsidianProvider";
+import { TFile } from "obsidian";
+import { formatDate, parseLocalDate, toLocalISOString } from "@/util/date-utils";
 import { CalendarContext } from "@/services/CalendarContext";
 import { Class } from "@/services/ClassProvider";
 
@@ -38,6 +37,8 @@ export type Commitment = {
 
     actual_effort?: number;
 }
+
+const MAX_LOOSE_FILES = 10;
 
 export class CommitmentsProvider {
     private cache: Map<string, Commitment> | null = null;
@@ -119,5 +120,49 @@ export class CommitmentsProvider {
         this.commitmentsByDayCache.set(cacheKey, commitments);
 
         return commitments;
+    }
+
+    public async createNewCommitment() {
+        const template = this.ctx.obsidian.getApp().vault.getFileByPath(this.ctx.settings.commitmentTemplateLocation);
+
+        const contents = template
+            ? await this.ctx.obsidian.getApp().vault.cachedRead(template)
+            : "";
+
+        const path = this.ctx.settings.newCommitmentDefaultFolder + "Untitled commitment";
+        const ext = ".md";
+
+        let preExist = this.ctx.obsidian.getApp().vault.getAbstractFileByPath(path + ext);
+        let i = 0;
+
+        while (preExist instanceof TFile && i < MAX_LOOSE_FILES) {
+            i++;
+            preExist = this.ctx.obsidian.getApp().vault.getAbstractFileByPath(path + " " + i + ext);
+        }
+
+        const file = await this.ctx.obsidian.getApp().vault.create(
+            path + (i === 0 ? "" : " " + i) + ext,
+            contents
+        );
+
+        return file;
+    }
+
+    public async processNewCommitmentFrontmatter(file: TFile, fm: CommitmentFrontmatter) {
+        await this.ctx.obsidian.getApp().fileManager.processFrontMatter(file, (frontmatter: CommitmentFrontmatter) => {
+            frontmatter.type = fm.type ?? frontmatter.type;
+            frontmatter.role = fm.role ?? frontmatter.role;
+
+            frontmatter.assigned = fm.assigned ?? toLocalISOString(new Date()) ?? frontmatter.assigned;
+            frontmatter.status = fm.status ?? frontmatter.status;
+
+            frontmatter.start = fm.start ?? frontmatter.start;
+            frontmatter.due = fm.due ?? frontmatter.due;
+
+            frontmatter.class = fm.class ?? frontmatter.class;
+            frontmatter.project = fm.project ?? frontmatter.project;
+
+            frontmatter.actual_effort = fm.actual_effort ?? frontmatter.actual_effort;
+        });
     }
 }

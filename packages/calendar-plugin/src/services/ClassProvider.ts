@@ -12,7 +12,7 @@ type ClassFrontmatter = {
     term?: string;
 }
 
-export type Class = Omit<ClassFrontmatter, "period"> & {
+export type Class = {
     type: "entity";
     role: "class";
 
@@ -20,6 +20,10 @@ export type Class = Omit<ClassFrontmatter, "period"> & {
     title: string;
 
     period?: number;
+    subject?: string;
+
+    school_year?: string;
+    term?: string;
 }
 
 export class ClassProvider {
@@ -58,12 +62,22 @@ export class ClassProvider {
         }
     }
 
-    public async getClass(path: string): Promise<Class | null> {
+    public async getClass(path: string): Promise<Class | undefined> {
         if (this.cache === null) {
             await this.buildCache();
         }
 
-        return this.cache!.get(path) ?? null;
+        return this.cache!.get(path);
+    }
+
+    public async getClassByPeriod(period: number): Promise<Class | undefined> {
+        if (this.cache === null) {
+            await this.buildCache();
+        }
+
+        const result = [...this.cache!.values()].find(c => c.period === period);
+
+        return result;
     }
 
     public async getAllClasses(): Promise<Class[]> {

@@ -44,7 +44,7 @@ export class CalendarView extends ItemView {
     async onOpen() {
         console.log("open")
         this.root = createRoot(this.contentEl);
-        this.calendarContext = new CalendarContext(this.app);
+        this.calendarContext = new CalendarContext(this.app, this.settings);
 
         this.root.render(
             <ObsidianContext.Provider value={ { app: this.plugin, calendarContext: this.calendarContext, settings: this.settings }}>
