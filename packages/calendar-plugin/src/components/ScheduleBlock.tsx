@@ -162,7 +162,7 @@ function ScheduleBlock({ commitments, block, dayInfo }: {
             className={ concat("schedule-block", cs.length === 0 && "empty-block", isNow && "now", isOver && "drop-target") }
             style={ blockStyles }
             onClick={ onClick }
-            onContextMenu={ e => onContextMenu(e as unknown as MouseEvent, false) }
+            onContextMenu={ e => onContextMenu(e as unknown as MouseEvent, cs.length === 0) }
         >
             <div className="block-header">
                 <span className="block-period">{ block.period }</span>
