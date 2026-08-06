@@ -403,11 +403,12 @@ a.commitment {
     }
 }
 
-.task-button {
+.task-button.circular-button {
     --track-color: var(--color-base-40);
     --progress-color: #4f4;
 
     background: var(--color-base-25);
+    overflow: hidden;
 
     padding: var(--size-4-1);
     border-radius: var(--radius-s);
@@ -423,6 +424,49 @@ a.commitment {
 
     &:hover {
         scale: 1.2;
+    }
+}
+
+.task-button.filled-button {
+    --progress-color: #2f752f;
+
+    background: var(--color-base-30);
+    overflow: hidden;
+
+    border-radius: var(--radius-s);
+    box-sizing: content-box;
+
+    padding: 0;
+
+    height: calc(1.2em + var(--size-4-1));
+    aspect-ratio: 1;
+
+    cursor: pointer;
+    opacity: 0;
+
+    transition: scale .2s ease;
+
+    position: relative;
+
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+
+    &:hover {
+        scale: 1.2;
+    }
+
+    .task-button-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        height: 1.2em;
+    }
+
+    .task-button-fill {
+        width: 100%;
+        background-color: var(--progress-color);
     }
 }
 

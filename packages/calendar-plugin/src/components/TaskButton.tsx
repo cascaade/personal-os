@@ -44,7 +44,7 @@ function TaskButton({ complete, total, onClick }: { complete: number, total: num
     }, [ complete, total ]);
 
     return (
-        <div className="task-button" ref={ tagRef } onClick={ onClick }>
+        <div className="task-button circular-button" ref={ tagRef } onClick={ onClick }>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className={ "task-button-icon" }>
                 <path
                     id="track"
