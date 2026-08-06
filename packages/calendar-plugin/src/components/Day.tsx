@@ -9,6 +9,7 @@ import { Menu, setTooltip } from "obsidian";
 import CommitmentEl from "./CommitmentEl";
 import { useDroppable } from "@dnd-kit/core";
 import ScheduleBlock from "@/components/ScheduleBlock";
+import TaskButton from "@/components/TaskButton";
 
 export interface DayProps {
     dayInfo: DayInfo;
@@ -50,12 +51,12 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
     const subscribe = useCallback(
         (listener: () => void) =>
             provider.subscribe(key, listener),
-        [provider, key]
+        [ provider, key ]
     );
 
     const getSnapshot = useCallback(
         () => provider.getCommitments(dayInfo.date),
-        [provider, dayInfo.date]
+        [ provider, dayInfo.date ]
     );
 
     const commitments = useSyncExternalStore(
@@ -139,41 +140,51 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
     };
 
     return (
-        <div className={ concat("calendar-day", dayInfo.extraneous?.type, isOver && "drop-target") } data-date={ dayInfo.date.toDateString() }
-             ref={setNodeRef}
+        <div className={ concat("calendar-day", dayInfo.extraneous?.type, isOver && "drop-target") }
+             data-date={ dayInfo.date.toDateString() }
+             ref={ setNodeRef }
              style={ dayStyles }
-             onContextMenu={onContextMenu}
+             onContextMenu={ onContextMenu }
         >
             <div className="day-header">
-                <div
-                    className={ concat("day-number-container", thisMonth && "this-month", dayInfo.date.toDateString() == now.toDateString() && "today") }>
-                    { dayInfo.date.getDate() == 1 && MONTHS_OF_YEAR_TRUNC[dayInfo.date.getMonth()] + " " }
-                    <span className={ concat(
-                        "day-number"
-                    ) }>
-                    { dayInfo.date.getDate() }
-                </span>
+                <div className="day-options">
+                    <TaskButton complete={ 2 } total={ 5 } onClick={ () => {
+                        calendarContext.dailies.getOrCreateNewDailyNote(dayInfo.date)
+                            .then(file => calendarContext.obsidian.openInRightPane(file))
+                            .catch(console.error);
+                    } }></TaskButton>
                 </div>
                 <span className={ concat("day-type") } ref={ tagRef }>
                     { dayInfo.dayType }
                 </span>
-                <div className="day-options">
-                    {/*    0/1*/ }
+                <div
+                    className={ concat("day-number-container", thisMonth && "this-month", dayInfo.date.toDateString() == now.toDateString() && "today") }
+                >
+                    { dayInfo.date.getDate() == 1 && MONTHS_OF_YEAR_TRUNC[dayInfo.date.getMonth()] + " " }
+                    <span
+                        className={ concat(
+                            "day-number"
+                        ) }
+                    >
+                        { dayInfo.date.getDate() }
+                    </span>
                 </div>
             </div>
             <div className="day-container">
                 {
                     dayInfo.blocks.map((block, bi) => (
-                        <ScheduleBlock block={ block } key={ bi } commitments={ commitments } dayInfo={dayInfo}></ScheduleBlock>
+                        <ScheduleBlock block={ block } key={ bi } commitments={ commitments }
+                                       dayInfo={ dayInfo }></ScheduleBlock>
                     ))
                 }
                 <hr className={ concat(hoverShown && "hover-shown", aboveShown && "above-shown", belowShown && "bottom-shown") }/>
                 {
                     csWithoutClass.map((comm, ci) => (
-                        <CommitmentEl commitment={comm} draggable={true} key={ ci }></CommitmentEl>
+                        <CommitmentEl commitment={ comm } draggable={ true } key={ ci }></CommitmentEl>
                     ))
                 }
-                <div className={ concat("commitment", "new-commitment") } onClick={ onNewCommitment } onContextMenu={onNewContextMenu}>
+                <div className={ concat("commitment", "new-commitment") } onClick={ onNewCommitment }
+                     onContextMenu={ onNewContextMenu }>
                     +
                 </div>
             </div>

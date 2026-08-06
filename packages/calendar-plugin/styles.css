@@ -5,6 +5,11 @@
     --error-color-accent: rgb(89 25 0);
 }
 
+.view-content {
+    container-type: inline-size;
+    container-name: view-container;
+}
+
 .view-content:has(.calendar-view) {
     padding: 0;
 }
@@ -27,7 +32,7 @@
     display: flex;
     flex-direction: column;
 
-    min-width: 1200px;
+    min-width: 950px;
     overflow: hidden;
     overflow-x: auto;
 
@@ -99,13 +104,26 @@
     background-color: var(--background-primary-alt);
 }
 
-.day-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-flow: row-reverse;
+@container view-container (max-width: 1400px) {
+    .calendar-month-section {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
 
-    padding: 0 var(--size-4-1) var(--size-4-1);
+    .calendar-day:nth-child(7n), .calendar-day:nth-child(7n + 1) {
+        display: none;
+    }
+
+    .calendar-day:nth-child(7n - 1) {
+        border-right: var(--calendar-table-border);
+    }
+}
+
+.day-header {
+    display: grid;
+    align-items: center;
+    grid-template-columns: repeat(3, 1fr);
+
+    padding: 0 var(--size-4-1) var(--size-4-1) 0;
 }
 
 .day-type {
@@ -115,6 +133,7 @@
     line-height: 1;
     white-space: nowrap;
     border-radius: var(--radius-s);
+    text-align: center;
 }
 
 .day-container {
@@ -166,6 +185,8 @@
 
     transition: color .3s ease;
 
+    text-align: right;
+
     &.today{
         .day-number {
             color: var(--text-on-accent);
@@ -198,6 +219,12 @@
 
 .day-options {
     color: var(--text-faint);
+
+    display: flex;
+    align-items: center;
+    gap: .2em;
+
+    position: relative;
 }
 
 .calendar-day hr {
@@ -373,5 +400,34 @@ a.commitment {
         width: 30%;
         flex-grow: 0.5;
         /*flex: 0 0 auto !important;*/
+    }
+}
+
+.task-button {
+    --track-color: var(--color-base-40);
+    --progress-color: #4f4;
+
+    background: var(--color-base-25);
+
+    padding: var(--size-4-1);
+    border-radius: var(--radius-s);
+    box-sizing: content-box;
+
+    height: 1.2em;
+    aspect-ratio: 1;
+
+    cursor: pointer;
+    opacity: 0;
+
+    transition: scale .2s ease;
+
+    &:hover {
+        scale: 1.2;
+    }
+}
+
+.calendar-day:hover {
+    .task-button {
+        opacity: 1;
     }
 }
