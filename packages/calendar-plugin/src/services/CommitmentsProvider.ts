@@ -775,7 +775,13 @@ export class CommitmentsProvider {
             return;
         }
 
-        const { commitment, dayGap } = this.lastDuplicate;
+        const { dayGap } = this.lastDuplicate;
+        const commitment = this.getCommitment(this.lastDuplicate.commitment.file);
+
+        if (!commitment) {
+            new Notice("Couldn't find previous duplicate");
+            return;
+        }
 
         if (!commitment.due) {
             new Notice("No due date on previous commitment");

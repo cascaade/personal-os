@@ -14,9 +14,9 @@ function CommitmentEl({ commitment, draggable, duplicateOnDrag }: { commitment: 
         return calendarContext.commitments.getProject(commitment);
     }, [commitment]);
 
-    const getProjectPrefix = () => (project && (containsEmoji(project.title.charAt(0)) ? project.title.charAt(0) : project.title.charAt(0) + ": "));
+    const getProjectPrefix = () => (project && (containsEmoji(project.title.charAt(0).trim().replaceAll(/^\uFE0F/g, '')) ? project.title.charAt(0) : project.title.charAt(0) + ": "))?.replaceAll(/^\uFE0F/g, '');
 
-    const getCommitmentName = () => ((commitment.role === "project_expo" && calendarContext.commitments.getProject(commitment)?.title.substring(1)) || (calendarContext.commitments.getDuplicate(commitment)?.title ?? commitment.title)).trim();
+    const getCommitmentName = () => ((commitment.role === "project_expo" && calendarContext.commitments.getProject(commitment)?.title.substring(1)) || (calendarContext.commitments.getDuplicate(commitment)?.title ?? commitment.title)).trim().replaceAll(/^\uFE0F/g, '');
 
     if (draggable) {
         const {
