@@ -93,7 +93,7 @@ function CommitmentEl({ commitment, draggable, duplicateOnDrag }: { commitment: 
             onContextMenu={ onContextMenu }
         >
             {commitment.start && (
-                <span className="commitment-start-time">{minutesToTime(dateToMinutes(commitment.start), settings.twentyFourHourDisplayTime, settings.showAmPmDisplayTime)}</span>
+                <span className="commitment-start-time">{minutesToTime(dateToMinutes(commitment.start), settings.twentyFourHourDisplayTime, true)}</span>
             ) }
             {getProjectPrefix()} {getCommitmentName()}
         </a>);

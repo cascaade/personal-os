@@ -191,11 +191,21 @@
 
     text-align: right;
 
+    display: flex;
+    align-items: center;
+    justify-content: right;
+
     &.today{
         .day-number {
             color: var(--text-on-accent);
             position: relative;
             margin-left: var(--size-2-2);
+            font-size: .9em;
+            width: 1.2em;
+            height: 1.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .day-number::before {
@@ -206,8 +216,8 @@
             content: "";
             z-index: -4;
 
-            width: 1em;
-            height: 1em;
+            width: 1.2em;
+            height: 1.2em;
             border-radius: 50%;
             padding: var(--size-2-1);
 
@@ -445,12 +455,6 @@ a.commitment {
 
     cursor: pointer;
     opacity: 0;
-
-    transition: scale .2s ease;
-
-    &:hover {
-        scale: 1.2;
-    }
 }
 
 .task-button.filled-button {
