@@ -71,4 +71,8 @@
 h2 {
     margin: 0;
     line-height: 1.2;
+    font-size: 1em;
+    font-weight: var(--font-medium);
+    padding: var(--size-4-1);
+    margin-block-end: var(--size-4-2);
 }
