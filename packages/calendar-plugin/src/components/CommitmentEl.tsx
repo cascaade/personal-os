@@ -47,6 +47,18 @@ function CommitmentEl({ commitment, draggable }: { commitment: Commitment, dragg
 
             menu.addItem(item =>
                 item
+                    .setTitle("Duplicate")
+                    .setIcon("copy")
+                    .onClick(() => {
+                        calendarContext.commitments.duplicateCommitment(commitment)
+                            .catch(console.error);
+                    })
+            );
+
+            menu.addSeparator();
+
+            menu.addItem(item =>
+                item
                     .setTitle("Delete")
                     .setIcon("delete")
                     .onClick(() => {
@@ -72,7 +84,7 @@ function CommitmentEl({ commitment, draggable }: { commitment: Commitment, dragg
             } }
             onContextMenu={ onContextMenu }
         >
-            {(project && (containsEmoji(project.title.charAt(0)) ? project.title.charAt(0) : project.title.charAt(0) + ": "))} {commitment.title}
+            {(project && (containsEmoji(project.title.charAt(0)) ? project.title.charAt(0) : project.title.charAt(0) + ": "))} {calendarContext.commitments.getDuplicate(commitment)?.title ?? commitment.title}
         </a>);
     }
 

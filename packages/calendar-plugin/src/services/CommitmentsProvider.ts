@@ -16,6 +16,8 @@ type CommitmentFrontmatter = {
     class?: string;
     project?: string;
 
+    duplicate_of?: string;
+
     actual_effort?: number;
 }
 
@@ -32,8 +34,10 @@ export type Commitment = {
     start?: Date;
     due?: Date;
 
-    classFile?: string;
-    projectFile?: string;
+    classPath?: string;
+    projectPath?: string;
+
+    duplicatePath?: string;
 
     actual_effort?: number;
 }
@@ -111,8 +115,9 @@ export class CommitmentsProvider {
             status: fm.status,
             start: fm.start ? parseLocalDate(fm.start) : undefined,
             due: fm.due ? parseLocalDate(fm.due) : undefined,
-            classFile: fm.class,
-            projectFile: fm.project,
+            classPath: fm.class,
+            projectPath: fm.project,
+            duplicatePath: fm.duplicate_of,
             actual_effort: fm.actual_effort != null ? Number(fm.actual_effort) : undefined,
         };
     }
@@ -248,16 +253,29 @@ export class CommitmentsProvider {
     // }
 
     getClass(commitment: Commitment) {
-        if (!commitment.classFile) return;
+        if (!commitment.classPath) return;
 
-        return this.ctx.classes.getClass(commitment.classFile, commitment.file);
+        return this.ctx.classes.getClass(commitment.classPath, commitment.file);
     }
 
     getProject(commitment: Commitment): Commitment | undefined {
-        if (!commitment.projectFile) return;
+        if (!commitment.projectPath) return;
 
         const file = this.ctx.obsidian.resolveLink(
-            commitment.projectFile,
+            commitment.projectPath,
+            commitment.file
+        );
+
+        if (!(file instanceof TFile)) return;
+
+        return this.cacheByPath.get(file.path);
+    }
+
+    getDuplicate(commitment: Commitment): Commitment | undefined {
+        if (!commitment.duplicatePath) return;
+
+        const file = this.ctx.obsidian.resolveLink(
+            commitment.duplicatePath,
             commitment.file
         );
 
@@ -305,6 +323,8 @@ export class CommitmentsProvider {
 
             frontmatter.class = fm.class ?? frontmatter.class;
             frontmatter.project = fm.project ?? frontmatter.project;
+
+            frontmatter.duplicate_of = fm.duplicate_of ?? frontmatter.duplicate_of;
 
             frontmatter.actual_effort = fm.actual_effort ?? frontmatter.actual_effort;
         });
@@ -390,5 +410,59 @@ export class CommitmentsProvider {
                 )
             }
         ).open();
+    }
+
+    public async duplicateCommitment(commitment: Commitment): Promise<TFile> {
+        const vault = this.ctx.obsidian.getApp().vault;
+
+        const originalFile = commitment.duplicatePath
+            ? this.ctx.obsidian.resolveLink(
+                commitment.duplicatePath,
+                commitment.file
+            ) : commitment.file;
+
+        if (!(originalFile instanceof TFile)) {
+            throw new Error(
+                `Could not find original commitment: ${commitment.duplicatePath}`
+            );
+        }
+
+        const contents = await vault.cachedRead(originalFile);
+
+        const folder = (originalFile.parent?.path ?? "") + "/";
+        const name = originalFile.basename;
+
+        const path = folder + name;
+        const ext = ".md";
+
+        let preExist = this.ctx.obsidian.getApp().vault.getAbstractFileByPath(path + ext);
+        let i = 0;
+
+        while (preExist instanceof TFile) {
+            i++;
+            preExist = this.ctx.obsidian.getApp().vault.getAbstractFileByPath(path + " " + i + ext);
+        }
+
+        const file = await this.ctx.obsidian.getApp().vault.create(
+            path + (i === 0 ? "" : " " + i) + ext,
+            contents
+        );
+
+        let belated = this.cacheByPath.get(originalFile.path)?.due;
+
+        if (belated) {
+            belated = new Date(belated);
+            belated?.setDate(belated.getDate() + 1);
+        }
+
+        await this.modifyCommitmentFrontmatter(
+            file,
+            {
+                duplicate_of: `[[${ originalFile.basename }]]`,
+                due: belated ? formatDate(belated) : undefined,
+            }
+        );
+
+        return file;
     }
 }
