@@ -1,5 +1,5 @@
 import { Notice, TFile } from "obsidian";
-import { formatDate, parseLocalDate } from "@/util/date-utils";
+import { formatDate, getDayGap, parseLocalDate, toLocalISOString } from "@/util/date-utils";
 import { CalendarContext } from "@/services/CalendarContext";
 import { ConfirmModal } from "@/obsidian/ConfirmModal";
 
@@ -307,37 +307,32 @@ export class CommitmentsProvider {
 
                 if (!other) continue;
 
-                await this.ctx.obsidian
-                    .getApp()
-                    .fileManager
-                    .processFrontMatter(
+                const startDate = other.start ? new Date(other.start) : undefined;
+
+                if (startDate && commitment.start)
+                    startDate.setHours(
+                        commitment.start.getHours(),
+                        commitment.start.getMinutes(),
+                        commitment.start.getSeconds(),
+                        commitment.start.getMilliseconds()
+                    );
+
+                await this.modifyCommitmentFrontmatter(
                         other.file,
-                        (fm: CommitmentFrontmatter) => {
-                            fm.type = commitment.type;
-                            fm.role = commitment.role;
+                        {
+                            type: commitment.type,
+                            role: commitment.role,
 
-                            fm.assigned = commitment.assigned
-                                ? commitment.assigned.toISOString()
-                                : undefined;
+                            status: commitment.status,
 
-                            fm.status = commitment.status;
+                            start: startDate
+                                ? toLocalISOString(startDate)
+                                : undefined,
 
-                            fm.start = commitment.start
-                                ? commitment.start.toISOString()
-                                : undefined;
+                            class: commitment.classPath,
+                            project: commitment.projectPath,
 
-                            // IMPORTANT:
-                            // Do not synchronize due.
-                            // Each duplicate intentionally has its own day.
-
-                            fm.class = commitment.classPath;
-                            fm.project = commitment.projectPath;
-
-                            fm.actual_effort =
-                                commitment.actual_effort;
-
-                            // duplicate_of belongs to the individual
-                            // commitment and must not be changed.
+                            actual_effort: commitment.actual_effort,
                         }
                     );
             }
@@ -771,7 +766,6 @@ export class CommitmentsProvider {
     }
 
     setLastDuplicate(dupe: LastDuplicate) {
-        console.log(dupe);
         this.lastDuplicate = dupe;
     }
 

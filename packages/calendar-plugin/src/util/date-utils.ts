@@ -247,3 +247,7 @@ export function getDayGap(from: Date, to: Date): number {
         (toDay.getTime() - fromDay.getTime()) / (1000 * 60 * 60 * 24)
     );
 }
+
+export function dateToMinutes(date: Date) {
+    return date.getMinutes() + date.getHours() * 60;
+}

@@ -3,6 +3,10 @@
     --schedule-color-bg: rgba(255, 255, 0, 0.1);
     --schedule-color-accent: rgb(89 89 0);
     --error-color-accent: rgb(89 25 0);
+
+    --assignment-color-accent: #4d3636;
+    --classwork-color-accent: #374359;
+    --project-color-accent: #395241;
 }
 
 .view-content {
@@ -267,6 +271,22 @@ a.commitment {
     touch-action: none;
 }
 
+/* ALL COLORED */
+
+.day-container .commitment.role-assignment {
+    background: var(--assignment-color-accent);
+}
+
+.day-container .commitment.role-classwork {
+    background: var(--classwork-color-accent);
+}
+
+.day-container .commitment.role-project {
+    background: var(--project-color-accent);
+}
+
+/* END COLORED */
+
 .commitment.dragging {
     font-size: .9em;
 }
@@ -287,6 +307,12 @@ a.commitment {
         color: var(--text-muted);
         border: 1px dashed var(--background-modifier-border-hover);
     }
+}
+
+.commitment .commitment-start-time {
+    display: block;
+    font-size: .75em;
+    opacity: .6;
 }
 
 .calendar-day:hover {
