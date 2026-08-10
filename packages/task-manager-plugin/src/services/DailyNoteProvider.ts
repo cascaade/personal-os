@@ -61,7 +61,7 @@ export class DailyNoteProvider {
     }
 
     public parseDaily(file: TFile) {
-        if (!file) return null;
+        if (!file || this.ctx.obsidian.isInTemplatesFolder(file)) return null;
 
         const fm = this.ctx.obsidian.getFrontmatter(file) as DailyNoteFrontmatter;
         if (fm?.type !== "daily") return null;
@@ -117,43 +117,43 @@ export class DailyNoteProvider {
             this.notesByDay.set(formatDate(daily.date), daily);
         }
     }
+    //
+    // public async createNewDailyNote(day: Date) {
+    //     const template = this.ctx.obsidian.getApp().vault.getFileByPath(this.ctx.settings.dailyTemplateLocation);
+    //
+    //     const contents = template
+    //         ? await this.ctx.obsidian.getApp().vault.cachedRead(template)
+    //         : "";
+    //
+    //     const path = this.ctx.settings.newDailyDefaultFolder + formatDate(day) + ".md";
+    //
+    //     const preExist = this.ctx.obsidian.getApp().vault.getAbstractFileByPath(path);
+    //     if (preExist) {
+    //         await this.modifyDailyNoteFrontmatter(preExist as TFile, {
+    //             date: formatDate(day)
+    //         })
+    //         return preExist;
+    //     }
+    //
+    //     const file = await this.ctx.obsidian.getApp().vault.create(
+    //         path,
+    //         contents
+    //     );
+    //
+    //     return file;
+    // }
 
-    public async createNewDailyNote(day: Date) {
-        const template = this.ctx.obsidian.getApp().vault.getFileByPath(this.ctx.settings.dailyTemplateLocation);
-
-        const contents = template
-            ? await this.ctx.obsidian.getApp().vault.cachedRead(template)
-            : "";
-
-        const path = this.ctx.settings.newDailyDefaultFolder + formatDate(day) + ".md";
-
-        const preExist = this.ctx.obsidian.getApp().vault.getAbstractFileByPath(path);
-        if (preExist) {
-            await this.modifyDailyNoteFrontmatter(preExist as TFile, {
-                date: formatDate(day)
-            })
-            return preExist;
-        }
-
-        const file = await this.ctx.obsidian.getApp().vault.create(
-            path,
-            contents
-        );
-
-        return file;
-    }
-
-    public async getOrCreateNewDailyNote(day: Date) {
-       let note = this.getDailyByDy(day);
-       if (note) return note.file;
-
-       let file = (await this.createNewDailyNote(day)) as TFile;
-       await this.modifyDailyNoteFrontmatter(file, {
-           date: formatDate(day)
-       });
-
-        return file;
-    }
+    // public async getOrCreateNewDailyNote(day: Date) {
+    //    let note = this.getDailyByDy(day);
+    //    if (note) return note.file;
+    //
+    //    let file = (await this.createNewDailyNote(day)) as TFile;
+    //    await this.modifyDailyNoteFrontmatter(file, {
+    //        date: formatDate(day)
+    //    });
+    //
+    //     return file;
+    // }
 
     public async modifyDailyNoteFrontmatter(file: TFile, fm: DailyNoteFrontmatter) {
         await this.ctx.obsidian.getApp().fileManager.processFrontMatter(file, (frontmatter: DailyNoteFrontmatter) => {
@@ -168,6 +168,11 @@ export class DailyNoteProvider {
         const file = this.ctx.obsidian.resolveLink(link, sourceFile);
         if (!(file instanceof TFile)) return;
 
+        return this.cache.get(file);
+    }
+
+    getDailyByFile(file: TFile | undefined): DailyNote | undefined {
+        if (!file) return;
         return this.cache.get(file);
     }
 
