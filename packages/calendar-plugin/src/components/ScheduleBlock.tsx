@@ -8,10 +8,11 @@ import { DayInfo, ParsedBlock } from "@/util/schedule-utils";
 import { ROW_HEIGHT_EASE_TIME_MS } from "@/components/Calendar";
 import { useDroppable } from "@dnd-kit/core";
 
-function ScheduleBlock({ commitments, block, dayInfo }: {
+function ScheduleBlock({ commitments, block, dayInfo, controlDown }: {
     commitments: readonly Commitment[],
     block: ParsedBlock,
-    dayInfo: DayInfo
+    dayInfo: DayInfo,
+    controlDown: boolean
 }) {
     const { settings, calendarContext } = useContext(ObsidianContext)!;
 
@@ -180,7 +181,7 @@ function ScheduleBlock({ commitments, block, dayInfo }: {
             </div>
             {
                 cs.map((comm, ci) => (
-                    <CommitmentEl commitment={ comm } draggable={ true } key={ ci }></CommitmentEl>
+                    <CommitmentEl commitment={ comm } draggable={ true } key={ ci } duplicateOnDrag={controlDown}></CommitmentEl>
                 ))
             }
             { cs.length > 0 && (

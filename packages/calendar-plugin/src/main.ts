@@ -4,7 +4,6 @@ import { CalendarView, VIEW_TYPE_CALENDAR } from "./views/CalendarView";
 
 export default class CalendarPlugin extends Plugin {
     settings!: CalendarSettings;
-    view!: ItemView;
 
     async onload() {
         await this.loadSettings();
@@ -42,6 +41,29 @@ export default class CalendarPlugin extends Plugin {
             id: "open-calendar",
             name: "Open Calendar",
             callback: openCalendar
+        });
+
+        this.addCommand({
+            id: "duplicate-last-commitment",
+            name: "Duplicate last commitment",
+            hotkeys: [
+                {
+                    modifiers: ["Mod"],
+                    key: "D",
+                },
+            ],
+            callback: () => {
+                const leaf = this.app.workspace
+                    .getLeavesOfType(VIEW_TYPE_CALENDAR)[0];
+
+                if (!leaf) return;
+
+                const view = leaf.view;
+
+                if (view instanceof CalendarView) {
+                    view.duplicateLastCommitment();
+                }
+            },
         });
 
         this.addSettingTab(new CalendarSettingTab(this.app, this));

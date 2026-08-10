@@ -42,6 +42,11 @@ export type Commitment = {
     actual_effort?: number;
 }
 
+export interface LastDuplicate {
+    commitment: Commitment;
+    dayGap: number;
+}
+
 const MAX_LOOSE_FILES = 10;
 
 export class CommitmentsProvider {
@@ -56,6 +61,8 @@ export class CommitmentsProvider {
 
     private listenersByDay = new Map<string, Set<() => void>>();
     private pending = new Map<string, number>();
+
+    private lastDuplicate: LastDuplicate | null = null;
 
     constructor(private ctx: CalendarContext) {
         this.cache = new Map();
@@ -360,7 +367,7 @@ export class CommitmentsProvider {
         commitment: Commitment,
         oldPath?: string,
     ) {
-        for (const [originalPath, duplicates] of this.duplicateWeb) {
+        for (const [ originalPath, duplicates ] of this.duplicateWeb) {
             if (oldPath) {
                 duplicates.delete(oldPath);
             }
@@ -379,7 +386,7 @@ export class CommitmentsProvider {
             commitment.file
         );
 
-        if (!(originalFile instanceof TFile)) return;
+        if (!( originalFile instanceof TFile )) return;
 
         let duplicates =
             this.duplicateWeb.get(originalFile.path);
@@ -689,7 +696,7 @@ export class CommitmentsProvider {
         return false;
     }
 
-    public async duplicateCommitment(commitment: Commitment): Promise<TFile | undefined> {
+    public async duplicateCommitment(commitment: Commitment, date?: Date): Promise<TFile | undefined> {
         const vault = this.ctx.obsidian.getApp().vault;
 
         const original = this.getDuplicate(commitment) ?? commitment;
@@ -699,7 +706,7 @@ export class CommitmentsProvider {
         if (!original) {
             new Notice("Error in duplication");
             throw new Error(
-                `Could not find commitment in cache: ${originalFile.path}`
+                `Could not find commitment in cache: ${ originalFile.path }`
             );
         }
 
@@ -721,12 +728,16 @@ export class CommitmentsProvider {
             }
         }
 
+        if (date) {
+            due = date;
+        }
+
         const contents = await vault.cachedRead(originalFile);
 
-        const folder = (originalFile.parent?.path ?? "") + "/";
+        const folder = ( originalFile.parent?.path ?? "" ) + "/";
         const name = originalFile.basename;
 
-        const path = folder + name;
+        const path = folder + name + " duplicate";
         const ext = ".md";
 
         let preExist =
@@ -743,15 +754,59 @@ export class CommitmentsProvider {
         }
 
         const file = await vault.create(
-            path + (i === 0 ? "" : " " + i) + ext,
+            path + ( i === 0 ? "" : " " + i ) + ext,
             contents
         );
 
         await this.modifyCommitmentFrontmatter(file, {
-            duplicate_of: `[[${ originalFile.basename }]]`,
+            duplicate_of: `[[${ originalFile.path }|${ originalFile.basename }]]`,
             due: due ? formatDate(due) : undefined,
         });
 
         return file;
+    }
+
+    getCommitment(file: TFile) {
+        return this.cacheByPath.get(file.path);
+    }
+
+    setLastDuplicate(dupe: LastDuplicate) {
+        console.log(dupe);
+        this.lastDuplicate = dupe;
+    }
+
+    async duplicateLastCommitment() {
+        if (!this.lastDuplicate) {
+            new Notice("Couldn't find previous duplicate");
+            return;
+        }
+
+        const { commitment, dayGap } = this.lastDuplicate;
+
+        if (!commitment.due) {
+            new Notice("No due date on previous commitment");
+            return;
+        }
+
+        const newDate = new Date(commitment.due);
+        newDate.setDate(newDate.getDate() + dayGap);
+
+        const duplicate = await this.duplicateCommitment(commitment, newDate);
+
+        if (!duplicate) return;
+
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        let c = this.getCommitment(duplicate);
+
+        if (!c) {
+            new Notice("Error duplicating");
+            return;
+        }
+
+        this.lastDuplicate = {
+            commitment: c,
+            dayGap,
+        };
     }
 }

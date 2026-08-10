@@ -235,3 +235,15 @@ export function minutesToTime(
         .toString()
         .padStart(2, "0")}${showAmPm ? (isPm ? "p" : "a") : ""}`;
 }
+
+export function getDayGap(from: Date, to: Date): number {
+    const fromDay = new Date(from);
+    const toDay = new Date(to);
+
+    fromDay.setHours(0, 0, 0, 0);
+    toDay.setHours(0, 0, 0, 0);
+
+    return Math.round(
+        (toDay.getTime() - fromDay.getTime()) / (1000 * 60 * 60 * 24)
+    );
+}

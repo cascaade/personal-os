@@ -6,7 +6,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { Menu } from "obsidian";
 import { containsEmoji } from "@/util/emoji-utils";
 
-function CommitmentEl({ commitment, draggable }: { commitment: Commitment, draggable: boolean }) {
+function CommitmentEl({ commitment, draggable, duplicateOnDrag }: { commitment: Commitment, draggable: boolean, duplicateOnDrag: boolean }) {
     const { calendarContext } = useContext(ObsidianContext)!;
 
     const project = useMemo(() => {
@@ -23,11 +23,13 @@ function CommitmentEl({ commitment, draggable }: { commitment: Commitment, dragg
             listeners,
             setNodeRef,
             isDragging,
+            active
         } = useDraggable({
             id: commitment.file.path,
             data: {
                 type: "commitment",
                 commitment: commitment,
+                duplicateOnDrag: duplicateOnDrag ?? false,
             },
         });
 
@@ -35,15 +37,15 @@ function CommitmentEl({ commitment, draggable }: { commitment: Commitment, dragg
             // transform: transform
             //     ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
             //     : undefined,
-            opacity: isDragging ? 0 : 1,
+            opacity: isDragging ? (active?.data?.current?.duplicateOnDrag ? 0.75 : 0) : 1,
         };
 
         const onContextMenu = (e: React.MouseEvent) => {
             e.preventDefault();
 
             if (e.ctrlKey) {
-                calendarContext.obsidian.openNoteToRight(commitment.file.path)
-                    .catch(console.error);
+                // calendarContext.obsidian.openNoteToRight(commitment.file.path)
+                //     .catch(console.error);
                 return;
             }
 
@@ -79,6 +81,7 @@ function CommitmentEl({ commitment, draggable }: { commitment: Commitment, dragg
             className={ concat("commitment", "internal-link") }
             data-href={ commitment.file.path }
             ref={setNodeRef}
+            draggable={ false }
             {...listeners}
             {...attributes}
             style={style}
@@ -94,6 +97,7 @@ function CommitmentEl({ commitment, draggable }: { commitment: Commitment, dragg
 
     return (<a
         href={ commitment.file.path }
+        draggable={false}
         className={ concat("commitment", "dragging") }
         data-href={ commitment.file.path }
     >

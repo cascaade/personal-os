@@ -14,10 +14,11 @@ import TaskButton from "@/components/TaskButton";
 export interface DayProps {
     dayInfo: DayInfo;
     thisMonth: boolean;
+    controlDown: boolean;
     optionDown: boolean;
 }
 
-function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
+function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
     const { settings, calendarContext } = useContext(ObsidianContext)!;
 
     const getPeriod = (c: Commitment) => {
@@ -72,7 +73,7 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
         return !found;
     });
 
-    const hoverShown = optionDown && dayInfo.blocks.length > 0;
+    const hoverShown = controlDown && dayInfo.blocks.length > 0;
     const belowShown = csWithoutClass.length > 0;
     const aboveShown =
         dayInfo.blocks.some(block =>
@@ -174,13 +175,13 @@ function Day({ dayInfo, thisMonth, optionDown }: DayProps) {
                 {
                     dayInfo.blocks.map((block, bi) => (
                         <ScheduleBlock block={ block } key={ bi } commitments={ commitments }
-                                       dayInfo={ dayInfo }></ScheduleBlock>
+                                       dayInfo={ dayInfo } controlDown={controlDown}></ScheduleBlock>
                     ))
                 }
                 <hr className={ concat(hoverShown && "hover-shown", aboveShown && "above-shown", belowShown && "bottom-shown") }/>
                 {
                     csWithoutClass.map((comm, ci) => (
-                        <CommitmentEl commitment={ comm } draggable={ true } key={ ci }></CommitmentEl>
+                        <CommitmentEl commitment={ comm } draggable={ true } key={ ci } duplicateOnDrag={optionDown}></CommitmentEl>
                     ))
                 }
                 <div className={ concat("commitment", "new-commitment") } onClick={ onNewCommitment }

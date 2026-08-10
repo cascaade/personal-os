@@ -5,6 +5,7 @@ import {
     DAYS_OF_WEEK_TRUNC,
     formatDate,
     getCalendarDays,
+    getDayGap,
     toLocalISOString
 } from "@/util/date-utils";
 import { concat } from "@/util/classname-utils";
@@ -94,7 +95,7 @@ export function Calendar() {
 
     useEffect(() => {
         const container = scrollRef.current;
-        if (!container) return setOptionDown(true);
+        if (!container) return setControlDown(true);
 
         const handleMouseMove = (e: MouseEvent) => {
             const rect = container.getBoundingClientRect();
@@ -244,6 +245,7 @@ export function Calendar() {
         return () => container.removeEventListener("scroll", onScroll);
     }, [ months ]);
 
+    const [ controlDown, setControlDown ] = useState(false);
     const [ optionDown, setOptionDown ] = useState(false);
 
     const anchorElRef = useRef<HTMLElement | null>(null);
@@ -264,16 +266,21 @@ export function Calendar() {
             anchorHeight.current = rect?.height ?? 0;
             anchorTopRef.current = rect?.top ?? 0;
 
-            setOptionDown(next);
+            setControlDown(next);
         };
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Control") captureAnchor(true);
+            if (e.key === "Alt") setOptionDown(true);
         };
         const handleKeyUp = (e: KeyboardEvent) => {
             if (e.key === "Control") captureAnchor(false);
+            if (e.key === "Alt") setOptionDown(false);
         };
-        const handleBlur = () => setOptionDown(false);
+        const handleBlur = () => {
+            setControlDown(false)
+            setOptionDown(false);
+        };
 
         window.addEventListener("keydown", handleKeyDown);
         window.addEventListener("keyup", handleKeyUp);
@@ -295,7 +302,7 @@ export function Calendar() {
 
         const afterTop = rect.top;
         container.scrollTop += afterTop - anchorTopRef.current;
-    }, [optionDown]);
+    }, [controlDown]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -305,50 +312,101 @@ export function Calendar() {
         })
     );
 
-    function handleDragEnd(event: DragEndEvent) {
+    async function handleDragEnd(event: DragEndEvent) {
         const { active, over } = event;
         const activeData = active?.data.current;
-        const overData = over?.data.current as { type: string, date?: Date, period?: number };
+        const overData = over?.data.current as {
+            type: string;
+            date?: Date;
+            period?: number;
+        };
 
         if (!activeData || !overData) return;
 
-        const commitment = activeData.commitment as Commitment | undefined;
+        let commitment = activeData.commitment as Commitment | undefined;
         const newDate = overData.date;
 
         if (!commitment || !newDate) return;
+
+        // If Option was held when the drag started,
+        // create a duplicate and move that instead.
+        if (activeData.duplicateOnDrag) {
+            if (commitment.due && formatDate(newDate) == formatDate(commitment.due)) return;
+
+            const duplicate = await calendarContext.commitments
+                .duplicateCommitment(commitment, newDate);
+
+            if (!duplicate) return;
+
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            let c = calendarContext.commitments.getCommitment(duplicate);
+
+            if (!c) return;
+
+            if (commitment.due) {
+                calendarContext.commitments.setLastDuplicate({
+                    commitment: c,
+                    dayGap: getDayGap(commitment.due, newDate),
+                });
+            }
+
+            commitment = c;
+        }
 
         // modify date values
         let due = new Date();
 
         if (commitment.due) {
             due = new Date(commitment.due);
-            due.setFullYear(newDate.getFullYear(), newDate.getMonth(), newDate.getDate());
+            due.setFullYear(
+                newDate.getFullYear(),
+                newDate.getMonth(),
+                newDate.getDate(),
+            );
         }
 
         let start;
 
         if (commitment.start) {
             start = new Date(commitment.start);
-            start.setFullYear(newDate.getFullYear(), newDate.getMonth(), newDate.getDate());
+            start.setFullYear(
+                newDate.getFullYear(),
+                newDate.getMonth(),
+                newDate.getDate(),
+            );
         }
 
         // set frontmatter
         if (overData.type === "period") {
-            const clazz = calendarContext.classes.getClassByPeriod(overData.period!);
+            const clazz = calendarContext.classes.getClassByPeriod(
+                overData.period!,
+            );
 
-            calendarContext.commitments.modifyCommitmentFrontmatter(commitment.file, {
-                due: toLocalISOString(due),
-                start: "",
-                class: clazz ? `[[${ clazz.file.path }]]` : "",
-            }).catch(console.error);
+            calendarContext.commitments
+                .modifyCommitmentFrontmatter(commitment.file, {
+                    due: toLocalISOString(due),
+                    start: "",
+                    class: clazz
+                        ? `[[${clazz.file.path}]]`
+                        : "",
+                })
+                .catch(console.error);
         }
 
         if (overData.type === "day") {
-            calendarContext.commitments.modifyCommitmentFrontmatter(commitment.file, {
-                due: toLocalISOString(due),
-                start: start ? toLocalISOString(start) : undefined,
-                class: (commitment.due?.toDateString() === due.toDateString()) ? "" : undefined,
-            }).catch(console.error);
+            calendarContext.commitments
+                .modifyCommitmentFrontmatter(commitment.file, {
+                    due: toLocalISOString(due),
+                    start: start
+                        ? toLocalISOString(start)
+                        : undefined,
+                    class:
+                        commitment.due?.toDateString() === due.toDateString()
+                            ? ""
+                            : undefined,
+                })
+                .catch(console.error);
         }
     }
 
@@ -394,17 +452,17 @@ export function Calendar() {
                 }}
                 onDragEnd={(event) => {
                     setActiveCommitment(null);
-                    handleDragEnd(event);
+                    void handleDragEnd(event);
                 }}
                 onDragCancel={() => setActiveCommitment(null)}
             >
                 <div
-                    className={ concat("calendar-table", optionDown && "option-down") }
+                    className={ concat("calendar-table", controlDown && "option-down") }
                     ref={ scrollRef }
                 >
                     { months.map((month, index) => (
                         <Month key={ month.month.getTime() } loadedMonth={ month } monthRefs={ monthRefs } visibleMonth={ visibleMonth }
-                               index={ index } optionDown={optionDown}></Month>
+                               index={ index } controlDown={controlDown} optionDown={optionDown}></Month>
                     )) }
                 </div>
 
@@ -419,7 +477,7 @@ export function Calendar() {
                     ]}
                 >
                     {activeCommitment && (
-                        <CommitmentEl draggable={false} commitment={activeCommitment} />
+                        <CommitmentEl draggable={false} commitment={activeCommitment} duplicateOnDrag={false} />
                     )}
                 </DragOverlay>
             </DndContext>

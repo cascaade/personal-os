@@ -41,8 +41,11 @@ export class CalendarView extends ItemView {
         return "calendar-check";
     }
 
+    duplicateLastCommitment() {
+        void this.calendarContext.commitments.duplicateLastCommitment();
+    }
+
     async onOpen() {
-        console.log("open")
         this.root = createRoot(this.contentEl);
         this.calendarContext = new CalendarContext(this.plugin, this.settings);
 
@@ -55,7 +58,6 @@ export class CalendarView extends ItemView {
     }
 
     async onClose() {
-        console.log("unmount");
         this.calendarContext.obsidian.onunload();
         this.root.unmount();
     }
