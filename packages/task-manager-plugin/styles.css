@@ -1,0 +1,43 @@
+:root {
+    --cascaades-task-manager-accent: #6bfff3;
+    --schedule-color-bg: rgba(255, 255, 0, 0.1);
+    --schedule-color-accent: rgb(89 89 0);
+    --error-color-accent: rgb(89 25 0);
+
+    --assignment-color-accent: #4d3636;
+    --classwork-color-accent: #374359;
+    --project-color-accent: #395241;
+}
+
+.view-content {
+    container-type: inline-size;
+    container-name: view-container;
+}
+
+.view-content:has(.calendar-view) {
+    padding: 0;
+}
+
+.workspace-tab-header[data-type="task-manager-view"] .workspace-tab-header-inner-icon {
+    color: var(--cascaades-task-manager-accent) !important;
+}
+
+.task-manager-ribbon-icon {
+    color: var(--cascaades-task-manager-accent);
+
+    &:hover, &:active {
+        color: var(--cascaades-task-manager-accent) !important;
+    }
+}
+
+.task-manager-view {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
+    max-width: var(--file-line-width);
+    margin: auto;
+
+    --calendar-table-border: 1px solid var(--background-modifier-border);
+}
