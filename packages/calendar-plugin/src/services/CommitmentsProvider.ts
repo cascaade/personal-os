@@ -1,4 +1,4 @@
-import { TFile } from "obsidian";
+import { Notice, TFile } from "obsidian";
 import { formatDate, parseLocalDate } from "@/util/date-utils";
 import { CalendarContext } from "@/services/CalendarContext";
 import { ConfirmModal } from "@/obsidian/ConfirmModal";
@@ -49,6 +49,9 @@ export class CommitmentsProvider {
     private cacheByPath = new Map<string, Commitment>();
     private commitmentsByDay = new Map<string, Commitment[]>();
 
+    private duplicateWeb = new Map<string, Set<string>>();
+    private synchronizing = new Set<string>();
+
     private readonly EMPTY_COMMITMENTS: readonly Commitment[] = [];
 
     private listenersByDay = new Map<string, Set<() => void>>();
@@ -60,7 +63,7 @@ export class CommitmentsProvider {
         for (const file of this.ctx.obsidian.getMarkdownFiles()) {
             if (this.ctx.obsidian.isInTemplatesFolder(file)) continue;
 
-            this.reparse(file, false);
+            this.reparse(file, false).catch(console.error);
         }
 
         this.ctx.obsidian.registerEvent(
@@ -122,7 +125,7 @@ export class CommitmentsProvider {
         };
     }
 
-    private reparse(file: TFile, notify: boolean | undefined = true, oldPath?: string) {
+    private async reparse(file: TFile, notify: boolean | undefined = true, oldPath?: string) {
         const parsed = this.parseCommitment(file);
 
         if (!parsed) {
@@ -139,16 +142,23 @@ export class CommitmentsProvider {
 
             this.cache.set(file, parsed);
             this.cacheByPath.set(file.path, parsed);
+            this.rebuildDuplicateMembership(parsed, oldPath);
 
-            this.updateDayMembership(existing, parsed, !!notify);
+            await this.updateDayMembership(existing, parsed, !!notify);
         } else {
             this.cache.set(file, parsed);
             this.cacheByPath.set(file.path, parsed);
-            this.addDayMembership(parsed, !!notify);
+            this.rebuildDuplicateMembership(parsed, oldPath);
+
+            await this.addDayMembership(parsed, !!notify);
+        }
+
+        if (!this.synchronizing.has(file.path)) {
+            await this.synchronizeDuplicateWeb(parsed);
         }
     }
 
-    private updateDayMembership(
+    private async updateDayMembership(
         oldCommitment: Commitment,
         newCommitment: Commitment,
         notify: boolean,
@@ -161,7 +171,7 @@ export class CommitmentsProvider {
             ? formatDate(newCommitment.due)
             : undefined;
 
-        // Same day: replace the object in-place (immutably)
+        // Same day: replace the object in-place.
         if (oldKey === newKey) {
             if (newKey) {
                 const commitments = this.commitmentsByDay.get(newKey);
@@ -170,7 +180,9 @@ export class CommitmentsProvider {
                     this.commitmentsByDay.set(
                         newKey,
                         commitments.map(c =>
-                            c === oldCommitment ? newCommitment : c
+                            c === oldCommitment
+                                ? newCommitment
+                                : c
                         )
                     );
                 }
@@ -183,12 +195,15 @@ export class CommitmentsProvider {
             return;
         }
 
-        // Remove from old day
+        // Remove from old day FIRST.
         if (oldKey) {
-            const commitments = this.commitmentsByDay.get(oldKey);
+            const commitments =
+                this.commitmentsByDay.get(oldKey);
 
             if (commitments) {
-                const next = commitments.filter(c => c !== oldCommitment);
+                const next = commitments.filter(
+                    c => c !== oldCommitment
+                );
 
                 if (next.length === 0) {
                     this.commitmentsByDay.delete(oldKey);
@@ -202,10 +217,24 @@ export class CommitmentsProvider {
             }
         }
 
-        // Add to new day
+        // Now check for duplicate collision.
+        if (newKey) {
+            const deleted =
+                await this.handleDuplicateCollision(
+                    newCommitment
+                );
+
+            // The commitment being moved was deleted.
+            if (deleted) {
+                return;
+            }
+        }
+
+        // Add to new day.
         if (newKey) {
             const commitments =
-                this.commitmentsByDay.get(newKey) ?? this.EMPTY_COMMITMENTS;
+                this.commitmentsByDay.get(newKey) ??
+                this.EMPTY_COMMITMENTS;
 
             this.commitmentsByDay.set(newKey, [
                 ...commitments,
@@ -218,7 +247,7 @@ export class CommitmentsProvider {
         }
     }
 
-    private addDayMembership(commitment: Commitment, notify: boolean) {
+    private async addDayMembership(commitment: Commitment, notify: boolean) {
         if (!commitment.due) return;
 
         const key = formatDate(commitment.due);
@@ -237,8 +266,202 @@ export class CommitmentsProvider {
             this.notifyDay(key);
     }
 
+    private async synchronizeDuplicateWeb(commitment: Commitment) {
+        const originalPath = this.getOriginalPath(commitment);
+
+        if (!originalPath) return;
+
+        const duplicatePaths =
+            this.duplicateWeb.get(originalPath) ?? new Set();
+
+        const allPaths = new Set([
+            originalPath,
+            ...duplicatePaths,
+        ]);
+
+        // Don't synchronize if we're already doing so.
+        if (
+            [ ...allPaths ].some(path =>
+                this.synchronizing.has(path)
+            )
+        ) {
+            return;
+        }
+
+        for (const path of allPaths) {
+            this.synchronizing.add(path);
+        }
+
+        try {
+            for (const path of allPaths) {
+                if (path === commitment.file.path) continue;
+
+                const other = this.cacheByPath.get(path);
+
+                if (!other) continue;
+
+                await this.ctx.obsidian
+                    .getApp()
+                    .fileManager
+                    .processFrontMatter(
+                        other.file,
+                        (fm: CommitmentFrontmatter) => {
+                            fm.type = commitment.type;
+                            fm.role = commitment.role;
+
+                            fm.assigned = commitment.assigned
+                                ? commitment.assigned.toISOString()
+                                : undefined;
+
+                            fm.status = commitment.status;
+
+                            fm.start = commitment.start
+                                ? commitment.start.toISOString()
+                                : undefined;
+
+                            // IMPORTANT:
+                            // Do not synchronize due.
+                            // Each duplicate intentionally has its own day.
+
+                            fm.class = commitment.classPath;
+                            fm.project = commitment.projectPath;
+
+                            fm.actual_effort =
+                                commitment.actual_effort;
+
+                            // duplicate_of belongs to the individual
+                            // commitment and must not be changed.
+                        }
+                    );
+            }
+        } finally {
+            for (const path of allPaths) {
+                this.synchronizing.delete(path);
+            }
+        }
+    }
+
+    private getOriginalPath(commitment: Commitment): string | undefined {
+        if (!commitment.duplicatePath) {
+            return commitment.file.path;
+        }
+
+        const originalFile = this.ctx.obsidian.resolveLink(
+            commitment.duplicatePath,
+            commitment.file
+        );
+
+        return originalFile instanceof TFile
+            ? originalFile.path
+            : undefined;
+    }
+
+    private rebuildDuplicateMembership(
+        commitment: Commitment,
+        oldPath?: string,
+    ) {
+        for (const [originalPath, duplicates] of this.duplicateWeb) {
+            if (oldPath) {
+                duplicates.delete(oldPath);
+            }
+
+            duplicates.delete(commitment.file.path);
+
+            if (duplicates.size === 0) {
+                this.duplicateWeb.delete(originalPath);
+            }
+        }
+
+        if (!commitment.duplicatePath) return;
+
+        const originalFile = this.ctx.obsidian.resolveLink(
+            commitment.duplicatePath,
+            commitment.file
+        );
+
+        if (!(originalFile instanceof TFile)) return;
+
+        let duplicates =
+            this.duplicateWeb.get(originalFile.path);
+
+        if (!duplicates) {
+            duplicates = new Set();
+            this.duplicateWeb.set(
+                originalFile.path,
+                duplicates
+            );
+        }
+
+        duplicates.add(commitment.file.path);
+    }
+
+    private async handleDuplicateCollision(
+        commitment: Commitment,
+    ): Promise<boolean> {
+        if (!commitment.due) return false;
+
+        const originalPath = this.getOriginalPath(commitment);
+
+        if (!originalPath) return false;
+
+        const dayKey = formatDate(commitment.due);
+
+        const original = this.cacheByPath.get(originalPath);
+
+        // Find any OTHER member of this duplicate family
+        // that is already on this day.
+        let collision: Commitment | undefined;
+
+        if (
+            original &&
+            original.file.path !== commitment.file.path &&
+            original.due &&
+            formatDate(original.due) === dayKey
+        ) {
+            collision = original;
+        }
+
+        if (!collision) {
+            const duplicatePaths =
+                this.duplicateWeb.get(originalPath);
+
+            if (duplicatePaths) {
+                for (const path of duplicatePaths) {
+                    const duplicate = this.cacheByPath.get(path);
+
+                    if (
+                        duplicate &&
+                        duplicate.file.path !== commitment.file.path &&
+                        duplicate.due &&
+                        formatDate(duplicate.due) === dayKey
+                    ) {
+                        collision = duplicate;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!collision) return false;
+
+        const fileToDelete =
+            commitment.file.path === originalPath
+                ? collision.file
+                : commitment.file;
+
+        await this.ctx.obsidian
+            .getApp()
+            .fileManager
+            .trashFile(fileToDelete);
+
+        new Notice("Deleted event collision");
+
+        // Return whether the commitment being moved was deleted.
+        return fileToDelete === commitment.file;
+    }
+
     public async getAllCommitments(): Promise<Commitment[]> {
-        return [...this.cache.values()];
+        return [ ...this.cache.values() ];
     }
 
     getCommitments(date: Date): readonly Commitment[] {
@@ -266,7 +489,7 @@ export class CommitmentsProvider {
             commitment.file
         );
 
-        if (!(file instanceof TFile)) return;
+        if (!( file instanceof TFile )) return;
 
         return this.cacheByPath.get(file.path);
     }
@@ -279,7 +502,7 @@ export class CommitmentsProvider {
             commitment.file
         );
 
-        if (!(file instanceof TFile)) return;
+        if (!( file instanceof TFile )) return;
 
         return this.cacheByPath.get(file.path);
     }
@@ -303,7 +526,7 @@ export class CommitmentsProvider {
         }
 
         const file = await this.ctx.obsidian.getApp().vault.create(
-            path + (i === 0 ? "" : " " + i) + ext,
+            path + ( i === 0 ? "" : " " + i ) + ext,
             contents
         );
 
@@ -364,7 +587,7 @@ export class CommitmentsProvider {
 
         this.pending.set(file.path,
             window.setTimeout(() => {
-                this.reparse(file, true, oldPath);
+                this.reparse(file, true, oldPath).catch(console.error);
                 this.pending.delete(file.path);
             }, 100)
         );
@@ -396,12 +619,22 @@ export class CommitmentsProvider {
         if (commitment.due) {
             this.notifyDay(formatDate(commitment.due));
         }
+
+        for (const [ originalPath, duplicates ] of this.duplicateWeb) {
+            duplicates.delete(file.path);
+
+            if (duplicates.size === 0) {
+                this.duplicateWeb.delete(originalPath);
+            }
+        }
+
+        this.duplicateWeb.delete(file.path);
     }
 
     public clearAllCommitments(day: Date) {
         new ConfirmModal(
             this.ctx.obsidian.getApp(),
-            `Delete all commitments on ${day.toDateString()}? This cannot be undone.`,
+            `Delete all commitments on ${ day.toDateString() }? This cannot be undone.`,
             () => {
                 const commitments = this.getCommitments(day);
                 commitments.forEach((commitment) => {
@@ -412,19 +645,80 @@ export class CommitmentsProvider {
         ).open();
     }
 
-    public async duplicateCommitment(commitment: Commitment): Promise<TFile> {
+    private hasDuplicateOnDay(
+        commitment: Commitment,
+        day: Date,
+    ): boolean {
+        const originalPath = this.getOriginalPath(commitment);
+
+        if (!originalPath) return false;
+
+        const dayKey = formatDate(day);
+
+        // Check the original.
+        const original = this.cacheByPath.get(originalPath);
+
+        if (
+            original &&
+            original.file.path !== commitment.file.path &&
+            original.due &&
+            formatDate(original.due) === dayKey
+        ) {
+            return true;
+        }
+
+        // Check all duplicates.
+        const duplicatePaths =
+            this.duplicateWeb.get(originalPath);
+
+        if (!duplicatePaths) return false;
+
+        for (const path of duplicatePaths) {
+            const duplicate = this.cacheByPath.get(path);
+
+            if (
+                duplicate &&
+                duplicate.file.path !== commitment.file.path &&
+                duplicate.due &&
+                formatDate(duplicate.due) === dayKey
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public async duplicateCommitment(commitment: Commitment): Promise<TFile | undefined> {
         const vault = this.ctx.obsidian.getApp().vault;
 
-        const originalFile = commitment.duplicatePath
-            ? this.ctx.obsidian.resolveLink(
-                commitment.duplicatePath,
-                commitment.file
-            ) : commitment.file;
+        const original = this.getDuplicate(commitment) ?? commitment;
 
-        if (!(originalFile instanceof TFile)) {
+        const originalFile = original.file;
+
+        if (!original) {
+            new Notice("Error in duplication");
             throw new Error(
-                `Could not find original commitment: ${commitment.duplicatePath}`
+                `Could not find commitment in cache: ${originalFile.path}`
             );
+        }
+
+        if (original.role == "project") {
+            new Notice("Cannot duplicate a project");
+            return;
+        }
+
+        let due = commitment.due
+            ? new Date(commitment.due)
+            : undefined;
+
+        if (due) {
+            due.setDate(due.getDate() + 1);
+
+            if (this.hasDuplicateOnDay(commitment, due)) {
+                new Notice("A duplicate already exists on that day");
+                return;
+            }
         }
 
         const contents = await vault.cachedRead(originalFile);
@@ -435,33 +729,28 @@ export class CommitmentsProvider {
         const path = folder + name;
         const ext = ".md";
 
-        let preExist = this.ctx.obsidian.getApp().vault.getAbstractFileByPath(path + ext);
+        let preExist =
+            vault.getAbstractFileByPath(path + ext);
+
         let i = 0;
 
         while (preExist instanceof TFile) {
             i++;
-            preExist = this.ctx.obsidian.getApp().vault.getAbstractFileByPath(path + " " + i + ext);
+
+            preExist = vault.getAbstractFileByPath(
+                path + " " + i + ext
+            );
         }
 
-        const file = await this.ctx.obsidian.getApp().vault.create(
+        const file = await vault.create(
             path + (i === 0 ? "" : " " + i) + ext,
             contents
         );
 
-        let belated = this.cacheByPath.get(originalFile.path)?.due;
-
-        if (belated) {
-            belated = new Date(belated);
-            belated?.setDate(belated.getDate() + 1);
-        }
-
-        await this.modifyCommitmentFrontmatter(
-            file,
-            {
-                duplicate_of: `[[${ originalFile.basename }]]`,
-                due: belated ? formatDate(belated) : undefined,
-            }
-        );
+        await this.modifyCommitmentFrontmatter(file, {
+            duplicate_of: `[[${ originalFile.basename }]]`,
+            due: due ? formatDate(due) : undefined,
+        });
 
         return file;
     }

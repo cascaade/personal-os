@@ -13,6 +13,10 @@ function CommitmentEl({ commitment, draggable }: { commitment: Commitment, dragg
         return calendarContext.commitments.getProject(commitment);
     }, [commitment]);
 
+    const getProjectPrefix = () => (project && (containsEmoji(project.title.charAt(0)) ? project.title.charAt(0) : project.title.charAt(0) + ": "));
+
+    const getCommitmentName = () => (calendarContext.commitments.getDuplicate(commitment)?.title ?? commitment.title);
+
     if (draggable) {
         const {
             attributes,
@@ -84,7 +88,7 @@ function CommitmentEl({ commitment, draggable }: { commitment: Commitment, dragg
             } }
             onContextMenu={ onContextMenu }
         >
-            {(project && (containsEmoji(project.title.charAt(0)) ? project.title.charAt(0) : project.title.charAt(0) + ": "))} {calendarContext.commitments.getDuplicate(commitment)?.title ?? commitment.title}
+            {getProjectPrefix()} {getCommitmentName()}
         </a>);
     }
 
@@ -93,7 +97,7 @@ function CommitmentEl({ commitment, draggable }: { commitment: Commitment, dragg
         className={ concat("commitment", "dragging") }
         data-href={ commitment.file.path }
     >
-        { commitment.title }
+        {getProjectPrefix()} {getCommitmentName()}
     </a>);
 }
 

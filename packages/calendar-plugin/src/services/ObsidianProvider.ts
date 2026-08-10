@@ -1,4 +1,4 @@
-import { App, EventRef, parseLinktext, TFile, WorkspaceItem, WorkspaceLeaf } from "obsidian";
+import { App, EventRef, Notice, parseLinktext, TFile, WorkspaceItem, WorkspaceLeaf } from "obsidian";
 import { VIEW_TYPE_CALENDAR } from "@/views/CalendarView";
 import CalendarPlugin from "@/main";
 
@@ -19,7 +19,8 @@ export class ObsidianProvider {
 
         const cleaned = link
             .replace(/^\[\[/, "")
-            .replace(/\]\]$/, "");
+            .replace(/\]\]$/, "")
+            .split("|")[0] ?? "";
 
         const parsed = parseLinktext(cleaned);
         const file = this.app.metadataCache.getFirstLinkpathDest(parsed.path, source.path);
