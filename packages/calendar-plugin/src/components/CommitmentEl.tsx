@@ -16,7 +16,7 @@ function CommitmentEl({ commitment, draggable, duplicateOnDrag }: { commitment: 
 
     const getProjectPrefix = () => (project && (containsEmoji(project.title.charAt(0)) ? project.title.charAt(0) : project.title.charAt(0) + ": "));
 
-    const getCommitmentName = () => (calendarContext.commitments.getDuplicate(commitment)?.title ?? commitment.title);
+    const getCommitmentName = () => ((commitment.role === "project_expo" && calendarContext.commitments.getProject(commitment)?.title.substring(1)) || (calendarContext.commitments.getDuplicate(commitment)?.title ?? commitment.title)).trim();
 
     if (draggable) {
         const {

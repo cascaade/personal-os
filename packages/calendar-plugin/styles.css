@@ -291,7 +291,7 @@ a.commitment {
     background: var(--classwork-color-accent);
 }
 
-.day-container .commitment.role-project {
+.day-container .commitment.role-project_expo {
     background: var(--project-color-accent);
 }
 

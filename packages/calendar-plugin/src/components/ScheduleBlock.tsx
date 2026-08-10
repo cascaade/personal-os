@@ -26,7 +26,7 @@ function ScheduleBlock({ commitments, block, dayInfo, controlDown }: {
         return calendarContext.commitments.getClass(project)?.period;
     }
 
-    const cs = commitments.filter(c => getPeriod(c) == block.period);
+    const cs = commitments.filter(c => c.role != "task" && c.role != "project").filter(c => getPeriod(c) == block.period);
 
     const getNowMinutes = () => {
         const now = new Date();

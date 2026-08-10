@@ -180,7 +180,7 @@ function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
                 }
                 <hr className={ concat(hoverShown && "hover-shown", aboveShown && "above-shown", belowShown && "bottom-shown") }/>
                 {
-                    csWithoutClass.map((comm, ci) => (
+                    csWithoutClass.filter(c => c.role != "task" && c.role != "project").map((comm, ci) => (
                         <CommitmentEl commitment={ comm } draggable={ true } key={ ci } duplicateOnDrag={optionDown}></CommitmentEl>
                     ))
                 }
