@@ -350,7 +350,21 @@ export function Calendar() {
                 });
             }
 
-            commitment = c;
+            if (overData.type === "period") {
+                const clazz = ctx.classes.getClassByPeriod(
+                    overData.period!,
+                );
+
+                await ctx.commitments
+                    .modifyCommitmentFrontmatter(commitment.file, {
+                        start: "",
+                        class: clazz
+                            ? `[[${clazz.file.path}]]`
+                            : "",
+                    });
+            }
+
+            return;
         }
 
         // modify date values

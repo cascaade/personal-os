@@ -3,16 +3,16 @@ import { concat } from "@personal-os/core/dist/utils/classname-utils";
 import { formatDate, minutesToTime, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import CommitmentEl from "@/components/CommitmentEl";
 import { ObsidianContext } from "@/views/CalendarView";
-import { Commitment } from "@personal-os/obsidian/src/services/CommitmentsProvider";
+import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { DayInfo, ParsedBlock } from "@personal-os/core/dist/utils/schedule-utils";
 import { ROW_HEIGHT_EASE_TIME_MS } from "@/components/Calendar";
 import { useDroppable } from "@dnd-kit/core";
 
-function ScheduleBlock({ commitments, block, dayInfo, controlDown }: {
+function ScheduleBlock({ commitments, block, dayInfo, optionDown }: {
     commitments: readonly Commitment[],
     block: ParsedBlock,
     dayInfo: DayInfo,
-    controlDown: boolean
+    optionDown: boolean,
 }) {
     const { settings, ctx } = useContext(ObsidianContext)!;
 
@@ -171,7 +171,7 @@ function ScheduleBlock({ commitments, block, dayInfo, controlDown }: {
             </div>
             {
                 cs.map((comm, ci) => (
-                    <CommitmentEl commitment={ comm } draggable={ true } key={ ci } duplicateOnDrag={controlDown}></CommitmentEl>
+                    <CommitmentEl commitment={ comm } draggable={ true } key={ ci } duplicateOnDrag={optionDown}></CommitmentEl>
                 ))
             }
             { cs.length > 0 && (

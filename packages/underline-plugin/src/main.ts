@@ -1,4 +1,4 @@
-import { Plugin, Editor, Notice } from "obsidian";
+import { Editor, Plugin } from "obsidian";
 
 export default class UnderlinePlugin extends Plugin {
     async onload() {

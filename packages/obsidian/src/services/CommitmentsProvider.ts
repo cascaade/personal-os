@@ -1,5 +1,5 @@
 import { Notice, TFile } from "obsidian";
-import { formatDate, getDayGap, parseLocalDate, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
+import { formatDate, parseLocalDate, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import PersonalOSContext from "./PersonalOSContext";
 import { ConfirmModal } from "../components/ConfirmModal";
 
@@ -273,6 +273,47 @@ export class CommitmentsProvider {
             this.notifyDay(key);
     }
 
+    private getDuplicateProperties(from: Commitment, to: Commitment | Date | undefined) {
+        const startDate = to ? (to instanceof Date) ? undefined : (to.start ? new Date(to.start) : undefined) : undefined;
+        const dueDate = to ? (to instanceof Date) ? new Date(to) : (to.due ? new Date(to.due) : undefined) : undefined;
+
+        if (startDate && from.start)
+            startDate.setHours(
+                from.start.getHours(),
+                from.start.getMinutes(),
+                from.start.getSeconds(),
+                from.start.getMilliseconds()
+            );
+
+        if (dueDate && from.due)
+            dueDate.setHours(
+                from.due.getHours(),
+                from.due.getMinutes(),
+                from.due.getSeconds(),
+                from.due.getMilliseconds()
+            );
+
+        return {
+            type: from.type,
+            role: from.role,
+
+            status: from.status,
+
+            start: startDate
+                ? toLocalISOString(startDate)
+                : undefined,
+
+            due: dueDate
+                ? toLocalISOString(dueDate)
+                : undefined,
+
+            class: from.classPath,
+            project: from.projectPath,
+
+            actual_effort: from.actual_effort,
+        } as CommitmentFrontmatter;
+    }
+
     private async synchronizeDuplicateWeb(commitment: Commitment) {
         const originalPath = this.getOriginalPath(commitment);
 
@@ -307,34 +348,10 @@ export class CommitmentsProvider {
 
                 if (!other) continue;
 
-                const startDate = other.start ? new Date(other.start) : undefined;
-
-                if (startDate && commitment.start)
-                    startDate.setHours(
-                        commitment.start.getHours(),
-                        commitment.start.getMinutes(),
-                        commitment.start.getSeconds(),
-                        commitment.start.getMilliseconds()
-                    );
-
                 await this.modifyCommitmentFrontmatter(
-                        other.file,
-                        {
-                            type: commitment.type,
-                            role: commitment.role,
-
-                            status: commitment.status,
-
-                            start: startDate
-                                ? toLocalISOString(startDate)
-                                : undefined,
-
-                            class: commitment.classPath,
-                            project: commitment.projectPath,
-
-                            actual_effort: commitment.actual_effort,
-                        }
-                    );
+                    other.file,
+                    this.getDuplicateProperties(commitment, other)
+                );
             }
         } finally {
             for (const path of allPaths) {
@@ -716,15 +733,15 @@ export class CommitmentsProvider {
 
         if (due) {
             due.setDate(due.getDate() + 1);
-
-            if (this.hasDuplicateOnDay(commitment, due)) {
-                new Notice("A duplicate already exists on that day");
-                return;
-            }
         }
 
         if (date) {
             due = date;
+        }
+
+        if (due && this.hasDuplicateOnDay(commitment, due)) {
+            new Notice("A duplicate already exists on that day");
+            return;
         }
 
         const contents = await vault.cachedRead(originalFile);
@@ -754,8 +771,8 @@ export class CommitmentsProvider {
         );
 
         await this.modifyCommitmentFrontmatter(file, {
-            duplicate_of: `[[${ originalFile.path }|${ originalFile.basename }]]`,
-            due: due ? formatDate(due) : undefined,
+            ...this.getDuplicateProperties(original, due),
+            duplicate_of: `[[${ originalFile.path }|${ originalFile.basename }]]`
         });
 
         return file;

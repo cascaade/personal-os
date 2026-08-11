@@ -1,4 +1,4 @@
-import { App, EventRef, Notice, parseLinktext, TFile, WorkspaceItem, WorkspaceLeaf, Plugin } from "obsidian";
+import { App, EventRef, parseLinktext, Plugin, TFile, WorkspaceItem, WorkspaceLeaf } from "obsidian";
 
 export class ObsidianProvider {
     constructor(private app: App, private plugin: Plugin, private viewType: string) {}

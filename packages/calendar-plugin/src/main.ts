@@ -1,4 +1,4 @@
-import { ItemView, Plugin, WorkspaceLeaf, } from 'obsidian';
+import { Plugin, WorkspaceLeaf, } from 'obsidian';
 import { CalendarSettings, CalendarSettingTab, DEFAULT_SETTINGS, } from './settings';
 import { CalendarView, VIEW_TYPE_CALENDAR } from "./views/CalendarView";
 

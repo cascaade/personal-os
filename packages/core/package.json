@@ -5,13 +5,15 @@
     "main": "dist/index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "build": "tsc"
+        "build": "tsc",
+        "watch": "chokidar 'src/**/*' -c 'npm run build'"
     },
     "private": true,
     "keywords": [],
     "author": "cascaade",
     "type": "commonjs",
     "devDependencies": {
+        "chokidar-cli": "^3.0.0",
         "typescript": "^5.8.3"
     }
 }

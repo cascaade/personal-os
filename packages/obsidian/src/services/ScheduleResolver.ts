@@ -1,5 +1,11 @@
 import schedules from "@personal-os/core/mock/schedules.json";
-import { collapseBlockSchedule, DayInfo, parseBlockSchedule, Schedule, sortBlockSchedule } from "@personal-os/core/dist/utils/schedule-utils";
+import {
+    collapseBlockSchedule,
+    DayInfo,
+    parseBlockSchedule,
+    Schedule,
+    sortBlockSchedule
+} from "@personal-os/core/dist/utils/schedule-utils";
 import { formatDate } from "@personal-os/core/dist/utils/date-utils";
 
 class ScheduleResolver {

@@ -1,7 +1,6 @@
 import { concat } from "@personal-os/core/dist/utils/classname-utils";
 import { formatDate, MONTHS_OF_YEAR_TRUNC, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import { DayInfo } from "@personal-os/core/dist/utils/schedule-utils";
-import { Commitment } from "@personal-os/obsidian/src/services/CommitmentsProvider";
 import React, { CSSProperties, memo, useCallback, useContext, useEffect, useRef, useSyncExternalStore } from "react";
 import { ObsidianContext } from "@/views/CalendarView";
 import { MIN_ROW_HEIGHT } from "@/components/Calendar";
@@ -168,7 +167,7 @@ function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
                 {
                     dayInfo.blocks.map((block, bi) => (
                         <ScheduleBlock block={ block } key={ bi } commitments={ commitments }
-                                       dayInfo={ dayInfo } controlDown={controlDown}></ScheduleBlock>
+                                       dayInfo={ dayInfo } optionDown={optionDown}></ScheduleBlock>
                     ))
                 }
                 <hr className={ concat(hoverShown && "hover-shown", aboveShown && "above-shown", belowShown && "bottom-shown") }/>

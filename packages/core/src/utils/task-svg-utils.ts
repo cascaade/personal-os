@@ -39,26 +39,3 @@ export function offsetHitAngle(
         y: center.y + Math.sin(hitAngle + offset) * radius
     };
 }
-
-// const O: Point = { x: 50, y: 50 };
-// const P: Point = { x: 50, y: 63 };
-//
-// const angle = Math.atan((88 - 50) / (25 - 63));
-//
-// console.log("angle: " + angle * 180 / Math.PI);
-//
-// // Example: origin offset 40px down from center, ray angle -50°, radius 150
-// const theta = rayCircleHitAngle(
-//     { x: P.x-O.x, y: P.y-O.y },
-//     angle,
-//     40
-// );
-// console.log("hit angle (deg):", theta !== null ? (theta * 180) / Math.PI : null);
-//
-// const offsetPoint = offsetHitAngle(
-//     theta ?? 0,
-//     -20 * Math.PI/180,
-//     40,
-//     { x: 50, y: 50 }
-// )
-// console.log("offsetPoint:", offsetPoint);

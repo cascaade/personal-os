@@ -3,7 +3,7 @@ import { createRoot, Root } from "react-dom/client";
 import { createContext } from "react";
 
 import { Calendar } from "@/components/Calendar";
-import PersonalOSContext from "@personal-os/obsidian/src/services/PersonalOSContext";
+import PersonalOSContext from "@personal-os/obsidian/dist/services/PersonalOSContext";
 import { CalendarSettings } from "@/settings";
 import CalendarPlugin from "@/main";
 

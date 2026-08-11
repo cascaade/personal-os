@@ -1,6 +1,6 @@
 import { concat } from "@personal-os/core/dist/utils/classname-utils";
 import React, { memo, useContext, useMemo } from "react";
-import { Commitment } from "@personal-os/obsidian/src/services/CommitmentsProvider";
+import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { ObsidianContext } from "@/views/CalendarView";
 import { useDraggable } from "@dnd-kit/core";
 import { Menu } from "obsidian";
@@ -43,6 +43,7 @@ function CommitmentEl({ commitment, draggable, duplicateOnDrag }: { commitment: 
 
         const onContextMenu = (e: React.MouseEvent) => {
             e.preventDefault();
+            e.stopPropagation();
 
             if (e.ctrlKey) {
                 // calendarContext.obsidian.openNoteToRight(commitment.file.path)
@@ -88,6 +89,8 @@ function CommitmentEl({ commitment, draggable, duplicateOnDrag }: { commitment: 
             style={style}
             onClick={ (e) => {
                 e.preventDefault();
+                e.stopPropagation();
+                if (e.ctrlKey) return;
                 ctx.obsidian.openNoteToRight(commitment.file.path).catch(console.error);
             } }
             onContextMenu={ onContextMenu }
