@@ -1,9 +1,9 @@
 :root {
     --cascaades-task-manager-accent: #6bfff3;
 
-    --tm-assignment-color-accent: #402d2d;
-    --tm-classwork-color-accent: #2b3240;
-    --tm-project-color-accent: #1d2920;
+    --tm-day-blocked-color-accent: #402d2d;
+    --tm-day-in-progress-color-accent: #2e3645;
+    --tm-day-done-color-accent: #2d4032;
 }
 
 .view-content {
@@ -105,8 +105,11 @@ h2 {
 
     touch-action: none;
 
+    /*transition: background-color .2s ease, opacity .2s ease;*/
+
     select {
-        background-color: var(--background-primary-alt);
+        background: var(--color-base-35);
+        border: 1px solid var(--color-base-40);
         padding: 0 1.6em 0 0.8em;
         border-radius: var(--radius-s);
         cursor: pointer;
@@ -128,7 +131,7 @@ h2 {
     cursor: pointer;
     opacity: 0;
     justify-content: center;
-    transition: opacity .2s ease, color .2s ease, border .2s ease;
+    /*transition: opacity .2s ease, color .2s ease, border .2s ease;*/
 
     margin-bottom: 0;
 
@@ -165,18 +168,37 @@ h2 {
     }
 }
 
+.task-project-tag {
+    flex-grow: 0!important;
+    background: var(--color-base-35);
+    border: 1px solid var(--color-base-40);
+    padding: var(--size-2-1) var(--size-4-2);
+    border-radius: var(--radius-s);
+    font-size: .9em;
+    color: var(--text-muted)!important;
+    opacity: .7;
+
+    /*transition: opacity .2s ease, color .2s ease;*/
+
+    &:hover {
+        opacity: .85;
+    }
+}
+
 /* ALL COLORED */
 
-.task-commitment.role-assignment {
-    background: var(--tm-assignment-color-accent);
+.task-commitment.status-blocked,
+.task-commitment.status-suspended {
+    background: var(--tm-day-blocked-color-accent);
 }
 
-.task-commitment.role-classwork {
-    background: var(--tm-classwork-color-accent);
+.task-commitment.status-in-progress {
+    background: var(--tm-day-in-progress-color-accent);
 }
 
-.task-commitment.role-project_expo {
-    background: var(--tm-project-color-accent);
+.task-commitment.status-done {
+    background: var(--tm-day-done-color-accent);
+    opacity: .3;
 }
 
 /* END COLORED */

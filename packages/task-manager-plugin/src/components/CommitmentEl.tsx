@@ -8,13 +8,17 @@ function CommitmentEl({ commitment }: { commitment: Commitment }) {
 
     const project = taskManagerContext.commitments.getProject(commitment);
 
-    return ( <div className={ concat("task-commitment", "internal-link") }>
-        <select>
+    return ( <div className={ concat("task-commitment", "internal-link", "status-" + commitment.status) }>
+        <select value={ commitment.status } onChange={ (e) => {
+            void taskManagerContext.commitments.modifyCommitmentFrontmatter(commitment.file, {
+                status: e.target.value,
+            })
+        } }>
             <option value="not-started">not started</option>
-            <option value="in-progress">in progress</option>
             <option value="blocked">blocked</option>
-            <option value="done">done</option>
+            <option value="in-progress">in progress</option>
             <option value="suspended">suspended</option>
+            <option value="done">done</option>
         </select>
         <a
             href={ commitment.file.path }
@@ -22,9 +26,12 @@ function CommitmentEl({ commitment }: { commitment: Commitment }) {
             onClick={ (e) => {
                 e.preventDefault();
                 taskManagerContext.obsidian.getApp().workspace.getMostRecentLeaf()?.openFile(commitment.file).catch(console.error);
-            } }>{ commitment.title }</a>
+            } }>{ commitment.status == "done" ? ( <del>{ commitment.title }</del> ) : ( commitment.title ) }</a>
         { project && (
-            <div className="task-project-tag"> { project.title } </div>
+            <a className="task-project-tag" onClick={ (e) => {
+                e.preventDefault();
+                taskManagerContext.obsidian.getApp().workspace.getMostRecentLeaf()?.openFile(project.file).catch(console.error);
+            } }> { project.title } </a>
         ) }
     </div> )
 }
