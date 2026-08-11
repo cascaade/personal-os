@@ -57,9 +57,11 @@ export class CommitmentsProvider {
     private duplicateWeb = new Map<string, Set<string>>();
     private synchronizing = new Set<string>();
 
+    private allCommitments: Commitment[] = [];
     private readonly EMPTY_COMMITMENTS: readonly Commitment[] = [];
 
     private listenersByDay = new Map<string, Set<() => void>>();
+    private globalListeners = new Set<() => void>();
     private pending = new Map<string, number>();
 
     private lastDuplicate: LastDuplicate | null = null;
@@ -162,6 +164,12 @@ export class CommitmentsProvider {
 
         if (!this.synchronizing.has(file.path)) {
             await this.synchronizeDuplicateWeb(parsed);
+        }
+
+        this.allCommitments = [ ...this.cache.values() ];
+
+        if (notify) {
+            this.notifyAll();
         }
     }
 
@@ -479,8 +487,8 @@ export class CommitmentsProvider {
         return fileToDelete === commitment.file;
     }
 
-    public async getAllCommitments(): Promise<Commitment[]> {
-        return [ ...this.cache.values() ];
+    public getAllCommitmentsSnapshot(): readonly Commitment[] {
+        return this.allCommitments;
     }
 
     getCommitments(date: Date): readonly Commitment[] {
@@ -489,10 +497,6 @@ export class CommitmentsProvider {
             this.EMPTY_COMMITMENTS
         );
     }
-
-    // public getCommitment(path: string): Promise<Commitment | null> {
-    //     return this.cache.get(path) ?? null;
-    // }
 
     getClass(commitment: Commitment) {
         if (!commitment.classPath) return;
@@ -601,6 +605,20 @@ export class CommitmentsProvider {
         }
     }
 
+    subscribeAll(listener: () => void) {
+        this.globalListeners.add(listener);
+
+        return () => {
+            this.globalListeners.delete(listener);
+        };
+    }
+
+    private notifyAll() {
+        for (const listener of this.globalListeners) {
+            listener();
+        }
+    }
+
     invalidate(file: TFile, oldPath?: string) {
         clearTimeout(this.pending.get(file.path));
 
@@ -648,6 +666,10 @@ export class CommitmentsProvider {
         }
 
         this.duplicateWeb.delete(file.path);
+
+        this.allCommitments = [ ...this.cache.values() ];
+
+        this.notifyAll();
     }
 
     public clearAllCommitments(day: Date) {

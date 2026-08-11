@@ -11,10 +11,6 @@
     container-name: view-container;
 }
 
-.view-content:has(.calendar-view) {
-    padding: 0;
-}
-
 .workspace-tab-header[data-type="task-manager-view"] .workspace-tab-header-inner-icon {
     color: var(--cascaades-task-manager-accent) !important;
 }
@@ -27,6 +23,14 @@
     }
 }
 
+.workspace-split.mod-vertical > * {
+    &.cascaades-plugins-side-leaf {
+        width: 30%;
+        flex-grow: 0.5;
+        /*flex: 0 0 auto !important;*/
+    }
+}
+
 .task-manager-view {
     width: 100%;
     height: 100%;
@@ -35,8 +39,6 @@
 
     max-width: var(--file-line-width);
     margin: auto;
-
-    --calendar-table-border: 1px solid var(--background-modifier-border);
 }
 
 .cm-sizer:has(.task-manager-view-inline) .metadata-container {
@@ -57,11 +59,7 @@
     margin: auto;
     transform: translateX(calc(var(--size-4-1) * -1 * var(--direction)));
 
-    --calendar-table-border: 1px solid var(--background-modifier-border);
-
     margin-block-end: 2rem;
-
-    /*background: var(--background-primary-alt);*/
 
     hr {
         margin: 0 auto var(--size-4-2)!important;
@@ -84,8 +82,13 @@ h2 {
     color: var(--text-accent);
     text-decoration: none;
     margin-left: var(--size-4-2);
-    display: inline-block;
+    display: flex;
+    align-items: center;
     flex-grow: 1;
+
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 
     &:hover {
         color: var(--text-accent-hover);
@@ -114,6 +117,7 @@ h2 {
         border-radius: var(--radius-s);
         cursor: pointer;
         height: unset;
+        line-height: 1.6;
     }
 }
 
@@ -174,7 +178,7 @@ h2 {
     border: 1px solid var(--color-base-40);
     padding: var(--size-2-1) var(--size-4-2);
     border-radius: var(--radius-s);
-    font-size: .9em;
+    font-size: .75em;
     color: var(--text-muted)!important;
     opacity: .7;
 
@@ -202,3 +206,95 @@ h2 {
 }
 
 /* END COLORED */
+
+/* TASK MANAGER (FULL VIEW) */
+
+.task-manager-section {
+    margin-bottom: var(--size-4-2);
+}
+
+.task-manager-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.task-manager-toggle {
+    display: flex;
+    gap: var(--size-2-2);
+    padding: var(--size-4-1) 0;
+}
+
+.task-manager-toggle-option {
+    background-color: var(--color-base-15)!important;
+    color: var(--text-faint);
+    cursor: pointer;
+    font-size: .85em;
+    height: min-content;
+
+    &:hover {
+        color: var(--text-muted);
+        background: var(--color-base-20) !important;
+    }
+
+    &.active {
+        color: var(--text-accent);
+        background: var(--color-base-25) !important;
+    }
+}
+
+.task-manager-empty-state {
+    color: var(--text-faint);
+    font-size: .9em;
+    padding: var(--size-4-2);
+    text-align: center;
+}
+
+.task-manager-show-more {
+    display: block;
+    width: 100%;
+    background: none;
+    border: 1px dashed var(--background-modifier-border);
+    border-radius: var(--radius-m);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: .85em;
+    padding: var(--size-2-2);
+    margin-bottom: var(--size-4-1);
+
+    &:hover {
+        border-color: var(--background-modifier-border-hover);
+        color: var(--text-normal);
+    }
+}
+
+.project-commitment {
+    align-items: center;
+}
+
+.project-progress-bar {
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: 8px;
+    align-self: center;
+    background: var(--color-base-35);
+    border-radius: var(--radius-s);
+    overflow: hidden;
+    margin: 0 var(--size-4-2);
+    width: 30%;
+}
+
+.project-progress-fill {
+    height: 100%;
+    background: var(--cascaades-task-manager-accent);
+    border-radius: var(--radius-s);
+}
+
+.project-progress-percent {
+    flex-shrink: 0;
+    width: 3em;
+    text-align: right;
+    color: var(--text-muted);
+    font-size: .85em;
+    margin-right: var(--size-4-2);
+}

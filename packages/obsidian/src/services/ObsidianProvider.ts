@@ -67,7 +67,7 @@ export class ObsidianProvider {
         this.detailLeafParent = newLeaf.parent;
 
         // obsidian api doesn't declare containerEl as a public property
-        (this.detailLeafParent as unknown as { containerEl: HTMLElement }).containerEl.addClass("calendar-plugin-side-leaf");
+        (this.detailLeafParent as unknown as { containerEl: HTMLElement }).containerEl.addClass("cascaades-plugins-side-leaf");
         return newLeaf;
     }
 

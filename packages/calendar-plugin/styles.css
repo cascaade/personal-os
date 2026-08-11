@@ -432,7 +432,7 @@ a.commitment {
 }
 
 .workspace-split.mod-vertical > * {
-    &.calendar-plugin-side-leaf {
+    &.cascaades-plugins-side-leaf {
         width: 30%;
         flex-grow: 0.5;
         /*flex: 0 0 auto !important;*/

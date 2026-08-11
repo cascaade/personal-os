@@ -8,6 +8,12 @@ export enum CalendarFillMode {
     NONE,
 }
 
+export function startOfToday(): Date {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
 export function parseLocalDate(value: string | Date): Date {
     if (value instanceof Date) return value;
 
