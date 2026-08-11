@@ -1,13 +1,12 @@
 import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { memo, useContext } from "react";
 import { concat } from "@personal-os/core/dist/utils/classname-utils";
-import { InlineObsidianContext } from "@/views/InlineTaskManagerView";
-import { ObsidianContext } from "@/views/TaskManagerView";
 import { formatDate } from "@personal-os/core/dist/utils/date-utils";
 import { emptyStringIfFalsey } from "@personal-os/core/dist/utils/general-utils";
+import { ObsidianContext } from "@/context/ObsidianContext";
 
 function CommitmentEl({ commitment, day }: { commitment: Commitment, day?: boolean }) {
-    const { ctx } = (useContext(InlineObsidianContext) ?? useContext(ObsidianContext))!;
+    const { ctx, leaf } = useContext(ObsidianContext)!;
 
     const project = ctx.commitments.getProject(commitment);
 
@@ -28,12 +27,12 @@ function CommitmentEl({ commitment, day }: { commitment: Commitment, day?: boole
             data-href={ commitment.file.path }
             onClick={ (e) => {
                 e.preventDefault();
-                ctx.obsidian.getApp().workspace.getMostRecentLeaf()?.openFile(commitment.file).catch(console.error);
+                void ctx.obsidian.openInRightPane(commitment.file, leaf);
             } }>{ commitment.status == "done" ? ( <del>{day && commitment.due && (formatDate(commitment.due) + ": ")} { commitment.title }</del> ) : ( emptyStringIfFalsey(day && commitment.due && (formatDate(commitment.due) + ": ")) + commitment.title ) }</a>
         { project && (
             <a className="task-project-tag" onClick={ (e) => {
                 e.preventDefault();
-                ctx.obsidian.getApp().workspace.getMostRecentLeaf()?.openFile(project.file).catch(console.error);
+                void ctx.obsidian.openInRightPane(project.file, leaf);
             } }> { project.title } </a>
         ) }
     </div> )

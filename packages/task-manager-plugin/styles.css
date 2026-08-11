@@ -24,7 +24,7 @@
 }
 
 .workspace-split.mod-vertical > * {
-    &.cascaades-plugins-side-leaf {
+    &.cascaades-detail-leaf {
         width: 30%;
         flex-grow: 0.5;
         /*flex: 0 0 auto !important;*/

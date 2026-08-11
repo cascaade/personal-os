@@ -2,9 +2,8 @@ import { memo, useContext, useMemo, useState } from "react";
 import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { concat } from "@personal-os/core/dist/utils/classname-utils";
 import { toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
-import { InlineObsidianContext } from "@/views/InlineTaskManagerView";
 import CommitmentEl from "@/components/CommitmentEl";
-import { ObsidianContext } from "@/views/TaskManagerView";
+import { ObsidianContext } from "@/context/ObsidianContext";
 
 const TASKS_PAGE_SIZE = 25;
 
@@ -15,7 +14,7 @@ function startOfToday(): Date {
 }
 
 function TaskManagerUpcomingSection({ commitments }: { commitments: readonly Commitment[] }) {
-    const { ctx } = useContext(ObsidianContext)!;
+    const { ctx, leaf } = useContext(ObsidianContext)!;
 
     const [ showPast, setShowPast ] = useState(false);
     const [ visibleCount, setVisibleCount ] = useState(TASKS_PAGE_SIZE);
@@ -73,7 +72,7 @@ function TaskManagerUpcomingSection({ commitments }: { commitments: readonly Com
                     role: "task",
                     assigned: toLocalISOString(new Date()),
                 });
-                await ctx.obsidian.openInRightPane(f);
+                await ctx.obsidian.openInRightPane(f, leaf);
             })
             .catch(console.error);
     };

@@ -8,7 +8,7 @@ import { containsEmoji } from "@personal-os/core/dist/utils/emoji-utils";
 import { dateToMinutes, minutesToTime } from "@personal-os/core/dist/utils/date-utils";
 
 function CommitmentEl({ commitment, draggable, duplicateOnDrag }: { commitment: Commitment, draggable: boolean, duplicateOnDrag: boolean }) {
-    const { ctx, settings } = useContext(ObsidianContext)!;
+    const { ctx, settings, leaf } = useContext(ObsidianContext)!;
 
     const project = useMemo(() => {
         return ctx.commitments.getProject(commitment);
@@ -91,7 +91,7 @@ function CommitmentEl({ commitment, draggable, duplicateOnDrag }: { commitment: 
                 e.preventDefault();
                 e.stopPropagation();
                 if (e.ctrlKey) return;
-                ctx.obsidian.openNoteToRight(commitment.file.path).catch(console.error);
+                ctx.obsidian.openNoteToRight(commitment.file.path, leaf).catch(console.error);
             } }
             onContextMenu={ onContextMenu }
         >

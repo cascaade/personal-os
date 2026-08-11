@@ -1,7 +1,9 @@
-import { App, EventRef, parseLinktext, Plugin, TFile, WorkspaceItem, WorkspaceLeaf } from "obsidian";
+import { App, EventRef, parseLinktext, Plugin, TFile, WorkspaceLeaf } from "obsidian";
+
+const DETAIL_LEAF_MARKER_CLASS = "cascaades-detail-leaf";
 
 export class ObsidianProvider {
-    constructor(private app: App, private plugin: Plugin, private viewType: string) {}
+    constructor(private app: App, private plugin: Plugin) {}
 
     // todo: get rid of for OOP
     public getApp(): App {
@@ -41,54 +43,50 @@ export class ObsidianProvider {
         return this.app.vault.getMarkdownFiles();
     }
 
-    private detailLeaf: WorkspaceLeaf | null = null;
-    private detailLeafParent: WorkspaceItem | null = null;
-
-    async openInRightPane(file: TFile) {
-        const calendarLeaf = this.app.workspace.getLeavesOfType(this.viewType)[0];
-        if (!calendarLeaf) return;
-
-        const rightLeaf = this.getOrCreateDetailLeaf(calendarLeaf);
+    async openInRightPane(file: TFile, sourceLeaf: WorkspaceLeaf) {
+        const rightLeaf = this.getOrCreateDetailLeaf(sourceLeaf);
         await rightLeaf.openFile(file);
     }
 
-    private getOrCreateDetailLeaf(calendarLeaf: WorkspaceLeaf): WorkspaceLeaf {
-        if (
-            this.detailLeaf &&
-            this.isLeafOpen(this.detailLeaf) &&
-            this.detailLeaf.parent === this.detailLeafParent
-        ) {
-            return this.detailLeaf;
-        }
+    private getOrCreateDetailLeaf(sourceLeaf: WorkspaceLeaf): WorkspaceLeaf {
+        // Look for a split any plugin has already marked as the shared detail pane —
+        // not just the one *this* provider instance happened to create.
+        const existing = this.findMarkedDetailLeaf();
+        if (existing) return existing;
 
-        // Stale, closed, or moved to a different frame — make a fresh split
-        const newLeaf = this.app.workspace.createLeafBySplit(calendarLeaf, "vertical");
-        this.detailLeaf = newLeaf;
-        this.detailLeafParent = newLeaf.parent;
+        const newLeaf = this.app.workspace.createLeafBySplit(sourceLeaf, "vertical");
 
         // obsidian api doesn't declare containerEl as a public property
-        (this.detailLeafParent as unknown as { containerEl: HTMLElement }).containerEl.addClass("cascaades-plugins-side-leaf");
+        const parentEl = (newLeaf.parent as unknown as { containerEl: HTMLElement }).containerEl;
+        parentEl.addClass(DETAIL_LEAF_MARKER_CLASS);
+
         return newLeaf;
     }
 
-    private isLeafOpen(leaf: WorkspaceLeaf): boolean {
-        let found = false;
-        this.app.workspace.iterateAllLeaves((l) => {
-            if (l === leaf) found = true;
+    private findMarkedDetailLeaf(): WorkspaceLeaf | undefined {
+        let found: WorkspaceLeaf | undefined;
+
+        this.app.workspace.iterateAllLeaves((leaf) => {
+            if (found) return;
+
+            const parentEl = (leaf.parent as unknown as { containerEl?: HTMLElement })?.containerEl;
+            if (parentEl?.hasClass(DETAIL_LEAF_MARKER_CLASS)) {
+                found = leaf;
+            }
         });
+
         return found;
     }
 
-    public async openNoteToRight(path: string) {
+    public async openNoteToRight(path: string, sourceLeaf: WorkspaceLeaf) {
         const file = this.app.vault.getAbstractFileByPath(path);
 
         if (!(file instanceof TFile)) return;
 
-        await this.openInRightPane(file);
+        await this.openInRightPane(file, sourceLeaf);
     };
 
     public onunload() {
-        this.detailLeaf = null;
-        this.detailLeafParent = null;
+
     }
 }

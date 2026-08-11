@@ -1,4 +1,4 @@
-import { App, MarkdownView } from "obsidian";
+import { App, MarkdownView, WorkspaceLeaf } from "obsidian";
 import { createRoot, Root } from "react-dom/client";
 import { createContext } from "react";
 
@@ -7,24 +7,24 @@ import { TaskManagerSettings } from "@/settings";
 import TaskManagerPlugin from "@/main";
 import PersonalOSContext from "@personal-os/obsidian/dist/services/PersonalOSContext";
 import { VIEW_TYPE_TASK_MANAGER } from "@/views/TaskManagerView";
+import { ObsidianContext } from "@/context/ObsidianContext";
 
 export type ObsidianContextProps = {
     readonly app: App;
     readonly ctx: PersonalOSContext;
     readonly settings: TaskManagerSettings;
+    readonly leaf: WorkspaceLeaf;
 }
-
-export const InlineObsidianContext = createContext<ObsidianContextProps | null>(null);
 
 export class InlineTaskManagerView {
     private roots = new Map<MarkdownView, Root>();
-    private ctx!: PersonalOSContext;
+    private readonly ctx!: PersonalOSContext;
 
     constructor(
         private plugin: TaskManagerPlugin,
         private settings: TaskManagerSettings
     ) {
-        this.ctx = new PersonalOSContext(this.plugin, this.settings, VIEW_TYPE_TASK_MANAGER);
+        this.ctx = new PersonalOSContext(this.plugin, this.settings);
     }
 
     /** Call this on active-leaf-change / file-open / metadata-changed */
@@ -83,10 +83,10 @@ export class InlineTaskManagerView {
 
         const root = createRoot(mountPoint);
         root.render(
-            <InlineObsidianContext.Provider
-                value={{ app: this.plugin.app, ctx: this.ctx, settings: this.settings }}>
+            <ObsidianContext.Provider
+                value={{ app: this.plugin.app, ctx: this.ctx, settings: this.settings, leaf: view.leaf }}>
                 <TaskManagerInlineView date={date}/>
-            </InlineObsidianContext.Provider>,
+            </ObsidianContext.Provider>,
         );
 
         this.roots.set(view, root);

@@ -1,12 +1,12 @@
 import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { memo, useContext, useEffect, useMemo, useRef } from "react";
 import { concat } from "@personal-os/core/dist/utils/classname-utils";
-import { ObsidianContext } from "@/views/TaskManagerView";
 import { formatDate } from "@personal-os/core/dist/utils/date-utils";
 import { setTooltip } from "obsidian";
+import { ObsidianContext } from "@/context/ObsidianContext";
 
 function ProjectEl({ project, allCommitments }: { project: Commitment, allCommitments: readonly Commitment[] }) {
-    const { ctx } = useContext(ObsidianContext)!;
+    const { ctx, leaf } = useContext(ObsidianContext)!;
 
     const { done, total } = useMemo(() => {
         let done = 0;
@@ -46,7 +46,7 @@ function ProjectEl({ project, allCommitments }: { project: Commitment, allCommit
             className="project-title"
             onClick={ (e) => {
                 e.preventDefault();
-                ctx.obsidian.getApp().workspace.getMostRecentLeaf()?.openFile(project.file).catch(console.error);
+                void ctx.obsidian.openInRightPane(project.file, leaf);
             } }>{project.due && (formatDate(project.due) + ": ")} { project.title }</a>
         <div className="project-progress-bar" ref={tagRef}>
             <div className="project-progress-fill" style={ { width: percent + "%" } }></div>

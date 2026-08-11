@@ -1,7 +1,7 @@
 import { useCallback, useContext, useSyncExternalStore } from "react";
 import TaskManagerProjectsSection from "@/components/TaskManagerProjectsSection";
 import TaskManagerUpcomingSection from "@/components/TaskManagerUpcomingSection";
-import { ObsidianContext } from "@/views/TaskManagerView";
+import { ObsidianContext } from "@/context/ObsidianContext";
 
 export default function TaskManager() {
     const { ctx } = useContext(ObsidianContext)!;

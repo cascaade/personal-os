@@ -2,16 +2,16 @@ import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvi
 import { memo, useContext } from "react";
 import { DayInfo, ParsedBlock } from "@personal-os/core/dist/utils/schedule-utils";
 import CommitmentEl from "@/components/CommitmentEl";
-import { InlineObsidianContext } from "@/views/InlineTaskManagerView";
 import { formatDate, minutesToTime, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import { concat } from "@personal-os/core/dist/utils/classname-utils";
+import { ObsidianContext } from "@/context/ObsidianContext";
 
 function TaskManagerGroup({commitments, block, dayInfo}: {
     commitments: readonly Commitment[],
     block: ParsedBlock,
     dayInfo: DayInfo,
 }) {
-    const { ctx, settings } = useContext(InlineObsidianContext)!;
+    const { ctx, settings, leaf } = useContext(ObsidianContext)!;
 
     const cs = commitments.filter(c => c.role === "task").filter(c => ctx.commitments.getPeriod(c) == block.period);
 
@@ -25,7 +25,7 @@ function TaskManagerGroup({commitments, block, dayInfo}: {
                     due: formatDate(dayInfo.date),
                     class: c ? `[[${ c.file.path }]]` : ""
                 });
-                await ctx.obsidian.openInRightPane(f);
+                await ctx.obsidian.openInRightPane(f, leaf);
             })
             .catch(console.error);
     }

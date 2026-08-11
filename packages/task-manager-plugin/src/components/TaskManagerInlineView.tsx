@@ -1,13 +1,13 @@
 import { useCallback, useContext, useSyncExternalStore } from "react";
 import { formatDate, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
-import { InlineObsidianContext } from "@/views/InlineTaskManagerView";
 import CommitmentEl from "@/components/CommitmentEl";
 import { scheduleResolver } from "@personal-os/obsidian/dist/services/ScheduleResolver";
 import TaskManagerGroup from "@/components/TaskManagerGroup";
 import { concat } from "@personal-os/core/dist/utils/classname-utils";
+import { ObsidianContext } from "@/context/ObsidianContext";
 
 export default function TaskManagerInlineView({ date }: { date: Date }) {
-    const { ctx } = useContext(InlineObsidianContext)!;
+    const { ctx, leaf } = useContext(ObsidianContext)!;
 
     const provider = ctx.commitments;
 
@@ -38,7 +38,7 @@ export default function TaskManagerInlineView({ date }: { date: Date }) {
                 assigned: toLocalISOString(new Date()),
                 due: formatDate(dayInfo.date)
             });
-            await ctx.obsidian.openInRightPane(f);
+            await ctx.obsidian.openInRightPane(f, leaf);
         }).catch(console.error);
     }
 

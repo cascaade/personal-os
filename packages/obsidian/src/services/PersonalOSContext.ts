@@ -11,10 +11,10 @@ export default class PersonalOSContext {
     readonly settings: Record<string, any>;
     readonly dailies: DailyNoteProvider;
 
-    constructor(plugin: Plugin, settings: Record<string, any>, viewType: string) {
+    constructor(plugin: Plugin, settings: Record<string, any>) {
         this.settings = settings;
 
-        this.obsidian = new ObsidianProvider(plugin.app, plugin, viewType);
+        this.obsidian = new ObsidianProvider(plugin.app, plugin);
         this.classes = new ClassProvider(this);
         this.commitments = new CommitmentsProvider(this);
         this.dailies = new DailyNoteProvider(this);

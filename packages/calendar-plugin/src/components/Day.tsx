@@ -18,7 +18,7 @@ export interface DayProps {
 }
 
 function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
-    const { settings, ctx } = useContext(ObsidianContext)!;
+    const { settings, ctx, leaf } = useContext(ObsidianContext)!;
 
     const tagRef = useRef<HTMLElement>(null);
 
@@ -89,7 +89,7 @@ function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
                 assigned: toLocalISOString(new Date()),
                 due: formatDate(dayInfo.date)
             });
-            await ctx.obsidian.openInRightPane(f);
+            await ctx.obsidian.openInRightPane(f, leaf);
         }).catch(console.error);
     }
 
@@ -113,7 +113,7 @@ function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
                 .setIcon("calendar")
                 .onClick(() => {
                     ctx.dailies.getOrCreateNewDailyNote(dayInfo.date)
-                        .then(file => ctx.obsidian.openInRightPane(file))
+                        .then(file => ctx.obsidian.openInRightPane(file, leaf))
                         .catch(console.error);
                 })
         );
@@ -143,7 +143,7 @@ function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
                 <div className="day-options">
                     <TaskButton complete={ done.length } total={ tasks.length } onClick={ () => {
                         ctx.dailies.getOrCreateNewDailyNote(dayInfo.date)
-                            .then(file => ctx.obsidian.openInRightPane(file))
+                            .then(file => ctx.obsidian.openInRightPane(file, leaf))
                             .catch(console.error);
                     } }></TaskButton>
                 </div>

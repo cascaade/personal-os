@@ -13,6 +13,7 @@ export type ObsidianContextProps = {
     readonly app: App;
     readonly ctx: PersonalOSContext;
     readonly settings: CalendarSettings;
+    readonly leaf: WorkspaceLeaf;
 }
 
 export const ObsidianContext = createContext<ObsidianContextProps | null>(null);
@@ -47,11 +48,11 @@ export class CalendarView extends ItemView {
 
     async onOpen() {
         this.root = createRoot(this.contentEl);
-        this.ctx = new PersonalOSContext(this.plugin, this.settings, VIEW_TYPE_CALENDAR);
+        this.ctx = new PersonalOSContext(this.plugin, this.settings);
 
         this.root.render(
             <ObsidianContext.Provider
-                value={ { app: this.plugin.app, ctx: this.ctx, settings: this.settings } }>
+                value={ { app: this.plugin.app, ctx: this.ctx, settings: this.settings, leaf: this.leaf } }>
                 <Calendar/>
             </ObsidianContext.Provider>,
         );

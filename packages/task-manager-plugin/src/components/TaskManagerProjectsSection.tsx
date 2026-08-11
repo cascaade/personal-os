@@ -3,12 +3,12 @@ import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvi
 import { concat } from "@personal-os/core/dist/utils/classname-utils";
 import { startOfToday, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import ProjectEl from "@/components/ProjectEl";
-import { ObsidianContext } from "@/views/TaskManagerView";
+import { ObsidianContext } from "@/context/ObsidianContext";
 
 const PROJECTS_PAGE_SIZE = 10;
 
 function TaskManagerProjectsSection({ commitments }: { commitments: readonly Commitment[] }) {
-    const { ctx } = useContext(ObsidianContext)!;
+    const { ctx, leaf } = useContext(ObsidianContext)!;
 
     const [ showPast, setShowPast ] = useState(false);
     const [ visibleCount, setVisibleCount ] = useState(PROJECTS_PAGE_SIZE);
@@ -54,7 +54,7 @@ function TaskManagerProjectsSection({ commitments }: { commitments: readonly Com
                     role: "project",
                     assigned: toLocalISOString(new Date()),
                 });
-                await ctx.obsidian.openInRightPane(f);
+                await ctx.obsidian.openInRightPane(f, leaf);
             })
             .catch(console.error);
     };

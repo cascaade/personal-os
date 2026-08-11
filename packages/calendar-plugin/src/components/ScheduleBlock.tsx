@@ -1,6 +1,6 @@
 import { CSSProperties, memo, useContext, useEffect, useRef, useState } from "react";
 import { concat } from "@personal-os/core/dist/utils/classname-utils";
-import { formatDate, minutesToTime, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
+import { dateToMinutes, formatDate, minutesToTime, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import CommitmentEl from "@/components/CommitmentEl";
 import { ObsidianContext } from "@/views/CalendarView";
 import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
@@ -14,22 +14,15 @@ function ScheduleBlock({ commitments, block, dayInfo, optionDown }: {
     dayInfo: DayInfo,
     optionDown: boolean,
 }) {
-    const { settings, ctx } = useContext(ObsidianContext)!;
+    const { settings, ctx, leaf } = useContext(ObsidianContext)!;
 
     const cs = commitments.filter(c => c.role != "task" && c.role != "project").filter(c => ctx.commitments.getPeriod(c) == block.period);
-
-    const getNowMinutes = () => {
-        const now = new Date();
-        const nowMinutes = new Date(now).getHours() * 60 + new Date(now).getMinutes();
-
-        return nowMinutes;
-    }
 
     const computeIsNow = (nowMinutes: number) => {
         return nowMinutes >= block.from && nowMinutes <= block.to;
     }
 
-    const nowMinutes = useRef(getNowMinutes());
+    const nowMinutes = useRef(dateToMinutes(new Date()));
     const [ isNow, setIsNow ] = useState(false);
     const [ , setTick ] = useState(0);
 
@@ -69,7 +62,7 @@ function ScheduleBlock({ commitments, block, dayInfo, optionDown }: {
 
         // Case 3: it's today — existing minute-based logic
         function scheduleNext() {
-            const current = getNowMinutes();
+            const current = dateToMinutes(new Date());
             nowMinutes.current = current;
             setIsNow(computeIsNow(current));
 
@@ -118,7 +111,7 @@ function ScheduleBlock({ commitments, block, dayInfo, optionDown }: {
                     due: formatDate(dayInfo.date),
                     class: c ? `[[${ c.file.path }]]` : ""
                 });
-                await ctx.obsidian.openInRightPane(f);
+                await ctx.obsidian.openInRightPane(f, leaf);
             })
             .catch(console.error);
     }
@@ -130,7 +123,7 @@ function ScheduleBlock({ commitments, block, dayInfo, optionDown }: {
             if (cs.length === 0)
                 return createNewCommitment();
 
-            ctx.obsidian.openInRightPane(c.file).catch(console.error);
+            ctx.obsidian.openInRightPane(c.file, leaf).catch(console.error);
         }
     }
 
