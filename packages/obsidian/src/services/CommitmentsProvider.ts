@@ -1,7 +1,7 @@
 import { Notice, TFile } from "obsidian";
-import { formatDate, getDayGap, parseLocalDate, toLocalISOString } from "@/util/date-utils";
-import { TaskManagerContext } from "@/services/TaskManagerContext";
-import { ConfirmModal } from "@/obsidian/ConfirmModal";
+import { formatDate, getDayGap, parseLocalDate, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
+import PersonalOSContext from "./PersonalOSContext";
+import { ConfirmModal } from "../components/ConfirmModal";
 
 type CommitmentFrontmatter = {
     type?: string;
@@ -64,7 +64,7 @@ export class CommitmentsProvider {
 
     private lastDuplicate: LastDuplicate | null = null;
 
-    constructor(private ctx: TaskManagerContext) {
+    constructor(private ctx: PersonalOSContext) {
         this.cache = new Map();
 
         for (const file of this.ctx.obsidian.getMarkdownFiles()) {

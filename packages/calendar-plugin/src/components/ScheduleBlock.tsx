@@ -1,10 +1,10 @@
-import { CSSProperties, memo, MouseEventHandler, useContext, useEffect, useRef, useState } from "react";
-import { concat } from "@/util/classname-utils";
-import { formatDate, minutesToTime, toLocalISOString } from "@/util/date-utils";
+import { CSSProperties, memo, useContext, useEffect, useRef, useState } from "react";
+import { concat } from "@personal-os/core/dist/utils/classname-utils";
+import { formatDate, minutesToTime, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import CommitmentEl from "@/components/CommitmentEl";
 import { ObsidianContext } from "@/views/CalendarView";
-import { Commitment } from "@/services/CommitmentsProvider";
-import { DayInfo, ParsedBlock } from "@/util/schedule-utils";
+import { Commitment } from "@personal-os/obsidian/src/services/CommitmentsProvider";
+import { DayInfo, ParsedBlock } from "@personal-os/core/dist/utils/schedule-utils";
 import { ROW_HEIGHT_EASE_TIME_MS } from "@/components/Calendar";
 import { useDroppable } from "@dnd-kit/core";
 
@@ -14,16 +14,16 @@ function ScheduleBlock({ commitments, block, dayInfo, controlDown }: {
     dayInfo: DayInfo,
     controlDown: boolean
 }) {
-    const { settings, calendarContext } = useContext(ObsidianContext)!;
+    const { settings, ctx } = useContext(ObsidianContext)!;
 
     const getPeriod = (c: Commitment) => {
-        let classPeriod = calendarContext.commitments.getClass(c)?.period;
+        let classPeriod = ctx.commitments.getClass(c)?.period;
         if (classPeriod) return classPeriod;
 
-        let project = calendarContext.commitments.getProject(c);
+        let project = ctx.commitments.getProject(c);
         if (!project) return;
 
-        return calendarContext.commitments.getClass(project)?.period;
+        return ctx.commitments.getClass(project)?.period;
     }
 
     const cs = commitments.filter(c => c.role != "task" && c.role != "project").filter(c => getPeriod(c) == block.period);
@@ -119,28 +119,28 @@ function ScheduleBlock({ commitments, block, dayInfo, controlDown }: {
     });
 
     const createNewCommitment = () => {
-        calendarContext.commitments.createNewCommitment()
+        ctx.commitments.createNewCommitment()
             .then(async (f) => {
-                const c = calendarContext.classes.getClassByPeriod(block.period);
-                await calendarContext.commitments.modifyCommitmentFrontmatter(f, {
+                const c = ctx.classes.getClassByPeriod(block.period);
+                await ctx.commitments.modifyCommitmentFrontmatter(f, {
                     role: "event",
                     assigned: toLocalISOString(new Date()),
                     due: formatDate(dayInfo.date),
                     class: c ? `[[${ c.file.path }]]` : ""
                 });
-                await calendarContext.obsidian.openInRightPane(f);
+                await ctx.obsidian.openInRightPane(f);
             })
             .catch(console.error);
     }
 
     const onClick = () => {
-        let c = calendarContext.classes.getClassByPeriod(block.period);
+        let c = ctx.classes.getClassByPeriod(block.period);
 
         if (c) {
             if (cs.length === 0)
                 return createNewCommitment();
 
-            calendarContext.obsidian.openInRightPane(c.file).catch(console.error);
+            ctx.obsidian.openInRightPane(c.file).catch(console.error);
         }
     }
 

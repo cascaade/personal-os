@@ -1,6 +1,6 @@
 import { TFile } from "obsidian";
-import { CalendarContext } from "@/services/CalendarContext";
-import { formatDate, parseLocalDate } from "@/util/date-utils";
+import PersonalOSContext from "./PersonalOSContext";
+import { formatDate, parseLocalDate } from "@personal-os/core/dist/utils/date-utils";
 
 type DailyNoteFrontmatter = {
     type?: string;
@@ -24,7 +24,7 @@ export class DailyNoteProvider {
     private listeners = new Set<() => void>();
     private pending = new Map<string, number>();
 
-    constructor(private ctx: CalendarContext) {
+    constructor(private ctx: PersonalOSContext) {
         for (const file of this.ctx.obsidian.getMarkdownFiles()) {
             if (this.ctx.obsidian.isInTemplatesFolder(file)) continue;
 
@@ -61,7 +61,7 @@ export class DailyNoteProvider {
     }
 
     public parseDaily(file: TFile) {
-        if (!file) return null;
+        if (!file || this.ctx.obsidian.isInTemplatesFolder(file)) return null;
 
         const fm = this.ctx.obsidian.getFrontmatter(file) as DailyNoteFrontmatter;
         if (fm?.type !== "daily") return null;
@@ -170,6 +170,11 @@ export class DailyNoteProvider {
         const file = this.ctx.obsidian.resolveLink(link, sourceFile);
         if (!(file instanceof TFile)) return;
 
+        return this.cache.get(file);
+    }
+
+    getDailyByFile(file: TFile | undefined): DailyNote | undefined {
+        if (!file) return;
         return this.cache.get(file);
     }
 

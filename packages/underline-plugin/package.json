@@ -1,5 +1,6 @@
 {
-    "name": "cascaades-underline-plugin",
+    "name": "@personal-os/underlines",
+    "private": true,
     "version": "1.0.1",
     "description": "Adds html underlines at selection",
     "main": "main.js",

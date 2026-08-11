@@ -7,22 +7,21 @@ import {
     getCalendarDays,
     getDayGap,
     toLocalISOString
-} from "@/util/date-utils";
-import { concat } from "@/util/classname-utils";
+} from "@personal-os/core/dist/utils/date-utils";
+import { concat } from "@personal-os/core/dist/utils/classname-utils";
 import Month from "@/components/Month";
 
 import {
     DndContext,
     DragEndEvent,
     DragOverlay,
-    MouseSensor,
-    PointerSensor, pointerWithin,
+    PointerSensor,
+    pointerWithin,
     useSensor,
     useSensors,
 } from "@dnd-kit/core";
-import { Commitment } from "@/services/CommitmentsProvider";
+import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { ObsidianContext } from "@/views/CalendarView";
-import { log } from "node:util";
 import CommitmentEl from "@/components/CommitmentEl";
 
 export const MIN_ROW_HEIGHT = 120;
@@ -43,7 +42,7 @@ function createLoadedMonth(first: Date, fillMode: CalendarFillMode) {
 }
 
 export function Calendar() {
-    const { calendarContext } = useContext(ObsidianContext)!;
+    const { ctx } = useContext(ObsidianContext)!;
 
     const [ months, setMonths ] = useState<LoadedMonth[]>(() => {
         const first = new Date();
@@ -333,19 +332,19 @@ export function Calendar() {
         if (activeData.duplicateOnDrag) {
             if (commitment.due && formatDate(newDate) == formatDate(commitment.due)) return;
 
-            const duplicate = await calendarContext.commitments
+            const duplicate = await ctx.commitments
                 .duplicateCommitment(commitment, newDate);
 
             if (!duplicate) return;
 
             await new Promise(resolve => setTimeout(resolve, 200));
 
-            let c = calendarContext.commitments.getCommitment(duplicate);
+            let c = ctx.commitments.getCommitment(duplicate);
 
             if (!c) return;
 
             if (commitment.due) {
-                calendarContext.commitments.setLastDuplicate({
+                ctx.commitments.setLastDuplicate({
                     commitment: c,
                     dayGap: getDayGap(commitment.due, newDate),
                 });
@@ -379,11 +378,11 @@ export function Calendar() {
 
         // set frontmatter
         if (overData.type === "period") {
-            const clazz = calendarContext.classes.getClassByPeriod(
+            const clazz = ctx.classes.getClassByPeriod(
                 overData.period!,
             );
 
-            calendarContext.commitments
+            ctx.commitments
                 .modifyCommitmentFrontmatter(commitment.file, {
                     due: toLocalISOString(due),
                     start: "",
@@ -395,7 +394,7 @@ export function Calendar() {
         }
 
         if (overData.type === "day") {
-            calendarContext.commitments
+            ctx.commitments
                 .modifyCommitmentFrontmatter(commitment.file, {
                     due: toLocalISOString(due),
                     start: start

@@ -5,13 +5,13 @@ import { createContext } from "react";
 import TaskManager from "@/components/TaskManager";
 import { TaskManagerSettings } from "@/settings";
 import TaskManagerPlugin from "@/main";
-import { TaskManagerContext } from "@/services/TaskManagerContext";
+import PersonalOSContext from "@personal-os/obsidian/dist/services/PersonalOSContext";
 
 export const VIEW_TYPE_TASK_MANAGER = "task-manager-view";
 
 export type ObsidianContextProps = {
     readonly app: App;
-    readonly taskManagerContext: TaskManagerContext;
+    readonly ctx: PersonalOSContext;
     readonly settings: TaskManagerSettings;
 }
 
@@ -19,7 +19,7 @@ export const ObsidianContext = createContext<ObsidianContextProps | null>(null);
 
 export class TaskManagerView extends ItemView {
     private root!: Root;
-    private taskManagerContext!: TaskManagerContext;
+    private ctx!: PersonalOSContext;
 
     constructor(
         leaf: WorkspaceLeaf,
@@ -43,11 +43,11 @@ export class TaskManagerView extends ItemView {
 
     async onOpen() {
         this.root = createRoot(this.contentEl);
-        this.taskManagerContext = new TaskManagerContext(this.plugin, this.settings);
+        this.ctx = new PersonalOSContext(this.plugin, this.settings, VIEW_TYPE_TASK_MANAGER);
 
         this.root.render(
             <ObsidianContext.Provider
-                value={ { app: this.plugin.app, taskManagerContext: this.taskManagerContext, settings: this.settings } }>
+                value={ { app: this.plugin.app, ctx: this.ctx, settings: this.settings } }>
                 <TaskManager/>
             </ObsidianContext.Provider>,
         );

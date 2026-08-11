@@ -1,16 +1,16 @@
-import { Commitment } from "@/services/CommitmentsProvider";
+import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { memo, useContext } from "react";
-import { concat } from "@/util/classname-utils";
+import { concat } from "@personal-os/core/dist/utils/classname-utils";
 import { InlineObsidianContext } from "@/views/InlineTaskManagerView";
 
 function CommitmentEl({ commitment }: { commitment: Commitment }) {
-    const { taskManagerContext } = useContext(InlineObsidianContext)!;
+    const { ctx } = useContext(InlineObsidianContext)!;
 
-    const project = taskManagerContext.commitments.getProject(commitment);
+    const project = ctx.commitments.getProject(commitment);
 
     return ( <div className={ concat("task-commitment", "internal-link", "status-" + commitment.status) }>
         <select value={ commitment.status } onChange={ (e) => {
-            void taskManagerContext.commitments.modifyCommitmentFrontmatter(commitment.file, {
+            void ctx.commitments.modifyCommitmentFrontmatter(commitment.file, {
                 status: e.target.value,
             })
         } }>
@@ -25,12 +25,12 @@ function CommitmentEl({ commitment }: { commitment: Commitment }) {
             data-href={ commitment.file.path }
             onClick={ (e) => {
                 e.preventDefault();
-                taskManagerContext.obsidian.getApp().workspace.getMostRecentLeaf()?.openFile(commitment.file).catch(console.error);
+                ctx.obsidian.getApp().workspace.getMostRecentLeaf()?.openFile(commitment.file).catch(console.error);
             } }>{ commitment.status == "done" ? ( <del>{ commitment.title }</del> ) : ( commitment.title ) }</a>
         { project && (
             <a className="task-project-tag" onClick={ (e) => {
                 e.preventDefault();
-                taskManagerContext.obsidian.getApp().workspace.getMostRecentLeaf()?.openFile(project.file).catch(console.error);
+                ctx.obsidian.getApp().workspace.getMostRecentLeaf()?.openFile(project.file).catch(console.error);
             } }> { project.title } </a>
         ) }
     </div> )

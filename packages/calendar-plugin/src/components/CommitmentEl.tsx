@@ -1,22 +1,22 @@
-import { concat } from "@/util/classname-utils";
+import { concat } from "@personal-os/core/dist/utils/classname-utils";
 import React, { memo, useContext, useMemo } from "react";
-import { Commitment } from "@/services/CommitmentsProvider";
+import { Commitment } from "@personal-os/obsidian/src/services/CommitmentsProvider";
 import { ObsidianContext } from "@/views/CalendarView";
 import { useDraggable } from "@dnd-kit/core";
 import { Menu } from "obsidian";
-import { containsEmoji } from "@/util/emoji-utils";
-import { dateToMinutes, minutesToTime } from "@/util/date-utils";
+import { containsEmoji } from "@personal-os/core/dist/utils/emoji-utils";
+import { dateToMinutes, minutesToTime } from "@personal-os/core/dist/utils/date-utils";
 
 function CommitmentEl({ commitment, draggable, duplicateOnDrag }: { commitment: Commitment, draggable: boolean, duplicateOnDrag: boolean }) {
-    const { calendarContext, settings } = useContext(ObsidianContext)!;
+    const { ctx, settings } = useContext(ObsidianContext)!;
 
     const project = useMemo(() => {
-        return calendarContext.commitments.getProject(commitment);
+        return ctx.commitments.getProject(commitment);
     }, [commitment]);
 
     const getProjectPrefix = () => (project && (containsEmoji(project.title.charAt(0).trim().replaceAll(/^\uFE0F/g, '')) ? project.title.charAt(0) : project.title.charAt(0) + ": "))?.replaceAll(/^\uFE0F/g, '');
 
-    const getCommitmentName = () => ((commitment.role === "project_expo" && calendarContext.commitments.getProject(commitment)?.title.substring(1)) || (calendarContext.commitments.getDuplicate(commitment)?.title ?? commitment.title)).trim().replaceAll(/^\uFE0F/g, '');
+    const getCommitmentName = () => ((commitment.role === "project_expo" && ctx.commitments.getProject(commitment)?.title.substring(1)) || (ctx.commitments.getDuplicate(commitment)?.title ?? commitment.title)).trim().replaceAll(/^\uFE0F/g, '');
 
     if (draggable) {
         const {
@@ -57,7 +57,7 @@ function CommitmentEl({ commitment, draggable, duplicateOnDrag }: { commitment: 
                     .setTitle("Duplicate")
                     .setIcon("copy")
                     .onClick(() => {
-                        calendarContext.commitments.duplicateCommitment(commitment)
+                        ctx.commitments.duplicateCommitment(commitment)
                             .catch(console.error);
                     })
             );
@@ -69,7 +69,7 @@ function CommitmentEl({ commitment, draggable, duplicateOnDrag }: { commitment: 
                     .setTitle("Delete")
                     .setIcon("delete")
                     .onClick(() => {
-                        calendarContext.obsidian.getApp().fileManager.promptForDeletion(commitment.file)
+                        ctx.obsidian.getApp().fileManager.promptForDeletion(commitment.file)
                             .catch(console.error);
                     })
             );
@@ -88,7 +88,7 @@ function CommitmentEl({ commitment, draggable, duplicateOnDrag }: { commitment: 
             style={style}
             onClick={ (e) => {
                 e.preventDefault();
-                calendarContext.obsidian.openNoteToRight(commitment.file.path).catch(console.error);
+                ctx.obsidian.openNoteToRight(commitment.file.path).catch(console.error);
             } }
             onContextMenu={ onContextMenu }
         >

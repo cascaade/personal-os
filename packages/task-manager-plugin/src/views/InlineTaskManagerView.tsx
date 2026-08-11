@@ -5,11 +5,12 @@ import { createContext } from "react";
 import TaskManagerInlineView from "@/components/TaskManagerInlineView";
 import { TaskManagerSettings } from "@/settings";
 import TaskManagerPlugin from "@/main";
-import { TaskManagerContext } from "@/services/TaskManagerContext";
+import PersonalOSContext from "@personal-os/obsidian/dist/services/PersonalOSContext";
+import { VIEW_TYPE_TASK_MANAGER } from "@/views/TaskManagerView";
 
 export type ObsidianContextProps = {
     readonly app: App;
-    readonly taskManagerContext: TaskManagerContext;
+    readonly ctx: PersonalOSContext;
     readonly settings: TaskManagerSettings;
 }
 
@@ -17,13 +18,13 @@ export const InlineObsidianContext = createContext<ObsidianContextProps | null>(
 
 export class InlineTaskManagerView {
     private roots = new Map<MarkdownView, Root>();
-    private taskManagerContext!: TaskManagerContext;
+    private ctx!: PersonalOSContext;
 
     constructor(
         private plugin: TaskManagerPlugin,
         private settings: TaskManagerSettings
     ) {
-        this.taskManagerContext = new TaskManagerContext(this.plugin, this.settings);
+        this.ctx = new PersonalOSContext(this.plugin, this.settings, VIEW_TYPE_TASK_MANAGER);
     }
 
     /** Call this on active-leaf-change / file-open / metadata-changed */
@@ -60,7 +61,7 @@ export class InlineTaskManagerView {
 
     private shouldShowFor(view: MarkdownView): boolean {
         const file = view.file;
-        if (!file || this.taskManagerContext.obsidian.isInTemplatesFolder(file)) return false;
+        if (!file || this.ctx.obsidian.isInTemplatesFolder(file)) return false;
 
         const frontmatter = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
         return frontmatter?.type === "daily";
@@ -77,13 +78,13 @@ export class InlineTaskManagerView {
         const file = view.file;
         if (!file) return;
 
-        const date = this.taskManagerContext.dailies.getDailyByFile(file)?.date;
+        const date = this.ctx.dailies.getDailyByFile(file)?.date;
         if (!date) return;
 
         const root = createRoot(mountPoint);
         root.render(
             <InlineObsidianContext.Provider
-                value={{ app: this.plugin.app, taskManagerContext: this.taskManagerContext, settings: this.settings }}>
+                value={{ app: this.plugin.app, ctx: this.ctx, settings: this.settings }}>
                 <TaskManagerInlineView date={date}/>
             </InlineObsidianContext.Provider>,
         );

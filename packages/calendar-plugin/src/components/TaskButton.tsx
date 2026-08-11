@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef } from "react";
 import { setTooltip } from "obsidian";
-import { offsetHitAngle, Point, rayCircleHitAngle } from "@/util/task-svg-utils";
+import { offsetHitAngle, Point, rayCircleHitAngle } from "@personal-os/core/dist/utils/task-svg-utils";
 
 const check_bottom: Point = { x: 50, y: 63 };
 const circle_center: Point = { x: 50, y: 50 };

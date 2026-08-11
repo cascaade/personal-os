@@ -1,41 +1,41 @@
-import { Commitment } from "@/services/CommitmentsProvider";
+import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { memo, useContext } from "react";
-import { Block, DayInfo, ParsedBlock } from "@/util/schedule-utils";
+import { DayInfo, ParsedBlock } from "@personal-os/core/src/utils/schedule-utils";
 import CommitmentEl from "@/components/CommitmentEl";
 import { InlineObsidianContext } from "@/views/InlineTaskManagerView";
-import { formatDate, minutesToTime, toLocalISOString } from "@/util/date-utils";
-import { concat } from "@/util/classname-utils";
+import { formatDate, minutesToTime, toLocalISOString } from "@personal-os/core/src/utils/date-utils";
+import { concat } from "@personal-os/core/src/utils/classname-utils";
 
 function TaskManagerGroup({commitments, block, dayInfo}: {
     commitments: readonly Commitment[],
     block: ParsedBlock,
     dayInfo: DayInfo,
 }) {
-    const { taskManagerContext, settings } = useContext(InlineObsidianContext)!;
+    const { ctx, settings } = useContext(InlineObsidianContext)!;
 
     const getPeriod = (c: Commitment) => {
-        let classPeriod = taskManagerContext.commitments.getClass(c)?.period;
+        let classPeriod = ctx.commitments.getClass(c)?.period;
         if (classPeriod) return classPeriod;
 
-        let project = taskManagerContext.commitments.getProject(c);
+        let project = ctx.commitments.getProject(c);
         if (!project) return;
 
-        return taskManagerContext.commitments.getClass(project)?.period;
+        return ctx.commitments.getClass(project)?.period;
     }
 
     const cs = commitments.filter(c => c.role === "task").filter(c => getPeriod(c) == block.period);
 
     const createNewCommitment = () => {
-        taskManagerContext.commitments.createNewCommitment()
+        ctx.commitments.createNewCommitment()
             .then(async (f) => {
-                const c = taskManagerContext.classes.getClassByPeriod(block.period);
-                await taskManagerContext.commitments.modifyCommitmentFrontmatter(f, {
+                const c = ctx.classes.getClassByPeriod(block.period);
+                await ctx.commitments.modifyCommitmentFrontmatter(f, {
                     role: "task",
                     assigned: toLocalISOString(new Date()),
                     due: formatDate(dayInfo.date),
                     class: c ? `[[${ c.file.path }]]` : ""
                 });
-                await taskManagerContext.obsidian.openInRightPane(f);
+                await ctx.obsidian.openInRightPane(f);
             })
             .catch(console.error);
     }

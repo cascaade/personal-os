@@ -1,5 +1,5 @@
 import Day from "@/components/Day";
-import { calendarResolver } from "@/services/CalendarResolver";
+import { scheduleResolver } from "@personal-os/obsidian/dist/services/ScheduleResolver";
 import { memo, RefObject } from "react";
 import { LoadedMonth } from "@/components/Calendar";
 
@@ -30,7 +30,7 @@ function Month({ loadedMonth, monthRefs, index, visibleMonth, controlDown, optio
             {loadedMonth.dates.map((date) => (
                 <Day
                     key={date.toISOString()}
-                    dayInfo={calendarResolver.get(date)}
+                    dayInfo={scheduleResolver.get(date)}
                     controlDown={controlDown}
                     optionDown={optionDown}
                     thisMonth={

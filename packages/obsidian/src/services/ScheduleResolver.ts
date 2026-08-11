@@ -1,6 +1,6 @@
-import schedules from "@/mock/schedules.json";
-import { collapseBlockSchedule, DayInfo, parseBlockSchedule, Schedule, sortBlockSchedule } from "@/util/schedule-utils";
-import { formatDate } from "@/util/date-utils";
+import schedules from "@personal-os/core/mock/schedules.json";
+import { collapseBlockSchedule, DayInfo, parseBlockSchedule, Schedule, sortBlockSchedule } from "@personal-os/core/dist/utils/schedule-utils";
+import { formatDate } from "@personal-os/core/dist/utils/date-utils";
 
 class ScheduleResolver {
     private cache = new Map<string, DayInfo>();

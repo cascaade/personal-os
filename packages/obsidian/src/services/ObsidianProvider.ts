@@ -1,9 +1,7 @@
-import { App, EventRef, Notice, parseLinktext, TFile, WorkspaceItem, WorkspaceLeaf } from "obsidian";
-import { VIEW_TYPE_CALENDAR } from "@/views/CalendarView";
-import CalendarPlugin from "@/main";
+import { App, EventRef, Notice, parseLinktext, TFile, WorkspaceItem, WorkspaceLeaf, Plugin } from "obsidian";
 
 export class ObsidianProvider {
-    constructor(private app: App, private plugin: CalendarPlugin) {}
+    constructor(private app: App, private plugin: Plugin, private viewType: string) {}
 
     // todo: get rid of for OOP
     public getApp(): App {
@@ -47,7 +45,7 @@ export class ObsidianProvider {
     private detailLeafParent: WorkspaceItem | null = null;
 
     async openInRightPane(file: TFile) {
-        const calendarLeaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0];
+        const calendarLeaf = this.app.workspace.getLeavesOfType(this.viewType)[0];
         if (!calendarLeaf) return;
 
         const rightLeaf = this.getOrCreateDetailLeaf(calendarLeaf);

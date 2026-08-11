@@ -1,26 +1,26 @@
 import { useCallback, useContext, useSyncExternalStore } from "react";
-import { formatDate, toLocalISOString } from "@/util/date-utils";
+import { formatDate, toLocalISOString } from "@personal-os/core/src/utils/date-utils";
 import { InlineObsidianContext } from "@/views/InlineTaskManagerView";
 import CommitmentEl from "@/components/CommitmentEl";
-import { scheduleResolver } from "@/services/ScheduleResolver";
+import { scheduleResolver } from "@personal-os/obsidian/dist/services/ScheduleResolver";
 import TaskManagerGroup from "@/components/TaskManagerGroup";
-import { Commitment } from "@/services/CommitmentsProvider";
-import { concat } from "@/util/classname-utils";
+import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
+import { concat } from "@personal-os/core/src/utils/classname-utils";
 
 export default function TaskManagerInlineView({ date }: { date: Date }) {
-    const { taskManagerContext } = useContext(InlineObsidianContext)!;
+    const { ctx } = useContext(InlineObsidianContext)!;
 
     const getPeriod = (c: Commitment) => {
-        let classPeriod = taskManagerContext.commitments.getClass(c)?.period;
+        let classPeriod = ctx.commitments.getClass(c)?.period;
         if (classPeriod) return classPeriod;
 
-        let project = taskManagerContext.commitments.getProject(c);
+        let project = ctx.commitments.getProject(c);
         if (!project) return;
 
-        return taskManagerContext.commitments.getClass(project)?.period;
+        return ctx.commitments.getClass(project)?.period;
     }
 
-    const provider = taskManagerContext.commitments;
+    const provider = ctx.commitments;
 
     const key = formatDate(date);
 
@@ -43,13 +43,13 @@ export default function TaskManagerInlineView({ date }: { date: Date }) {
     const dayInfo = scheduleResolver.get(date);
 
     const createNewCommitment = () => {
-        taskManagerContext.commitments.createNewCommitment().then(async (f) => {
-            await taskManagerContext.commitments.modifyCommitmentFrontmatter(f, {
+        ctx.commitments.createNewCommitment().then(async (f) => {
+            await ctx.commitments.modifyCommitmentFrontmatter(f, {
                 role: "event",
                 assigned: toLocalISOString(new Date()),
                 due: formatDate(dayInfo.date)
             });
-            await taskManagerContext.obsidian.openInRightPane(f);
+            await ctx.obsidian.openInRightPane(f);
         }).catch(console.error);
     }
 

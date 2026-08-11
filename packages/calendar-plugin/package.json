@@ -1,5 +1,6 @@
 {
-    "name": "cascaades-calendar-plugin",
+    "name": "@personal-os/calendar",
+    "private": true,
     "version": "1.0.0",
     "description": "Calendar display",
     "main": "main.js",
@@ -11,7 +12,6 @@
         "lint": "eslint ."
     },
     "keywords": [],
-    "license": "0-BSD",
     "devDependencies": {
         "@eslint/js": "^9.39.4",
         "@types/node": "^22.15.17",

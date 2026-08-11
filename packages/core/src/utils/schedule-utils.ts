@@ -1,4 +1,4 @@
-import { timeToMinutes } from "@/util/date-utils";
+import { timeToMinutes } from "./date-utils";
 
 export type Block = {
     label: string;

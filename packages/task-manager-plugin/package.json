@@ -1,5 +1,6 @@
 {
-    "name": "cascaades-task-manager-plugin",
+    "name": "@personal-os/tasks",
+    "private": true,
     "version": "1.0.0",
     "description": "Task manager display",
     "main": "main.js",
@@ -27,6 +28,8 @@
         "typescript-eslint": "^8.59.1"
     },
     "dependencies": {
+        "@personal-os/core": "1.0.0",
+        "@personal-os/obsidian": "1.0.0",
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
         "react": "^19.2.8",

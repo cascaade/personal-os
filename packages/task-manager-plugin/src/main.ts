@@ -1,7 +1,6 @@
 import { MarkdownView, Plugin, WorkspaceLeaf, } from 'obsidian';
 import { DEFAULT_SETTINGS, TaskManagerSettings, TaskManagerSettingTab, } from './settings';
 import { TaskManagerView, VIEW_TYPE_TASK_MANAGER } from "./views/TaskManagerView";
-import { createRoot } from "react-dom/client";
 import { InlineTaskManagerView } from "@/views/InlineTaskManagerView";
 
 export default class TaskManagerPlugin extends Plugin {

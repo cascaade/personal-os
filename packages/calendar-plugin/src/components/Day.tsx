@@ -1,7 +1,7 @@
-import { concat } from "@/util/classname-utils";
-import { formatDate, MONTHS_OF_YEAR_TRUNC, toLocalISOString } from "@/util/date-utils";
-import { DayInfo } from "@/util/schedule-utils";
-import { Commitment } from "@/services/CommitmentsProvider";
+import { concat } from "@personal-os/core/dist/utils/classname-utils";
+import { formatDate, MONTHS_OF_YEAR_TRUNC, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
+import { DayInfo } from "@personal-os/core/dist/utils/schedule-utils";
+import { Commitment } from "@personal-os/obsidian/src/services/CommitmentsProvider";
 import React, { CSSProperties, memo, useCallback, useContext, useEffect, useRef, useSyncExternalStore } from "react";
 import { ObsidianContext } from "@/views/CalendarView";
 import { MIN_ROW_HEIGHT } from "@/components/Calendar";
@@ -19,16 +19,16 @@ export interface DayProps {
 }
 
 function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
-    const { settings, calendarContext } = useContext(ObsidianContext)!;
+    const { settings, ctx } = useContext(ObsidianContext)!;
 
     const getPeriod = (c: Commitment) => {
-        let classPeriod = calendarContext.commitments.getClass(c)?.period;
+        let classPeriod = ctx.commitments.getClass(c)?.period;
         if (classPeriod) return classPeriod;
 
-        let project = calendarContext.commitments.getProject(c);
+        let project = ctx.commitments.getProject(c);
         if (!project) return;
 
-        return calendarContext.commitments.getClass(project)?.period;
+        return ctx.commitments.getClass(project)?.period;
     }
 
     const tagRef = useRef<HTMLElement>(null);
@@ -45,7 +45,7 @@ function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
 
     const dayStyles = { minHeight: `${ MIN_ROW_HEIGHT }px` } as CSSProperties;
 
-    const provider = calendarContext.commitments;
+    const provider = ctx.commitments;
 
     const key = formatDate(dayInfo.date);
 
@@ -94,13 +94,13 @@ function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
     const now = new Date();
 
     const onNewCommitment = () => {
-        calendarContext.commitments.createNewCommitment().then(async (f) => {
-            await calendarContext.commitments.modifyCommitmentFrontmatter(f, {
+        ctx.commitments.createNewCommitment().then(async (f) => {
+            await ctx.commitments.modifyCommitmentFrontmatter(f, {
                 role: "event",
                 assigned: toLocalISOString(new Date()),
                 due: formatDate(dayInfo.date)
             });
-            await calendarContext.obsidian.openInRightPane(f);
+            await ctx.obsidian.openInRightPane(f);
         }).catch(console.error);
     }
 
@@ -123,8 +123,8 @@ function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
                 .setTitle("Open daily note")
                 .setIcon("calendar")
                 .onClick(() => {
-                    calendarContext.dailies.getOrCreateNewDailyNote(dayInfo.date)
-                        .then(file => calendarContext.obsidian.openInRightPane(file))
+                    ctx.dailies.getOrCreateNewDailyNote(dayInfo.date)
+                        .then(file => ctx.obsidian.openInRightPane(file))
                         .catch(console.error);
                 })
         );
@@ -136,7 +136,7 @@ function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
                 .setTitle("Clear")
                 .setIcon("delete")
                 .onClick(() => {
-                    calendarContext.commitments.clearAllCommitments(dayInfo.date);
+                    ctx.commitments.clearAllCommitments(dayInfo.date);
                 })
         );
 
@@ -153,8 +153,8 @@ function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
             <div className="day-header">
                 <div className="day-options">
                     <TaskButton complete={ done.length } total={ tasks.length } onClick={ () => {
-                        calendarContext.dailies.getOrCreateNewDailyNote(dayInfo.date)
-                            .then(file => calendarContext.obsidian.openInRightPane(file))
+                        ctx.dailies.getOrCreateNewDailyNote(dayInfo.date)
+                            .then(file => ctx.obsidian.openInRightPane(file))
                             .catch(console.error);
                     } }></TaskButton>
                 </div>

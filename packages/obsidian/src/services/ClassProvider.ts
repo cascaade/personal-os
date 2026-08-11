@@ -1,5 +1,5 @@
 import { TFile } from "obsidian";
-import { CalendarContext } from "@/services/CalendarContext";
+import PersonalOSContext from "./PersonalOSContext";
 
 type ClassFrontmatter = {
     type?: string;
@@ -33,7 +33,7 @@ export class ClassProvider {
     private listeners = new Set<() => void>();
     private pending = new Map<string, number>();
 
-    constructor(private ctx: CalendarContext) {
+    constructor(private ctx: PersonalOSContext) {
         for (const file of this.ctx.obsidian.getMarkdownFiles()) {
             if (this.ctx.obsidian.isInTemplatesFolder(file)) continue;
 

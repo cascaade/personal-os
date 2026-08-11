@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef } from "react";
 import { setTooltip } from "obsidian";
-import { Point } from "@/util/task-svg-utils";
+import { Point } from "@personal-os/core/dist/utils/task-svg-utils";
 
 const check_small_offset = 14;
 const check_big_offset = 38;
