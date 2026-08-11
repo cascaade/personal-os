@@ -809,4 +809,14 @@ export class CommitmentsProvider {
             dayGap,
         };
     }
+
+    getPeriod(c: Commitment) {
+        let classPeriod = this.getClass(c)?.period;
+        if (classPeriod) return classPeriod;
+
+        let project = this.getProject(c);
+        if (!project) return;
+
+        return this.getClass(project)?.period;
+    }
 }

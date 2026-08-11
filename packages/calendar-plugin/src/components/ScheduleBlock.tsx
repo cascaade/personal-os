@@ -16,17 +16,7 @@ function ScheduleBlock({ commitments, block, dayInfo, controlDown }: {
 }) {
     const { settings, ctx } = useContext(ObsidianContext)!;
 
-    const getPeriod = (c: Commitment) => {
-        let classPeriod = ctx.commitments.getClass(c)?.period;
-        if (classPeriod) return classPeriod;
-
-        let project = ctx.commitments.getProject(c);
-        if (!project) return;
-
-        return ctx.commitments.getClass(project)?.period;
-    }
-
-    const cs = commitments.filter(c => c.role != "task" && c.role != "project").filter(c => getPeriod(c) == block.period);
+    const cs = commitments.filter(c => c.role != "task" && c.role != "project").filter(c => ctx.commitments.getPeriod(c) == block.period);
 
     const getNowMinutes = () => {
         const now = new Date();

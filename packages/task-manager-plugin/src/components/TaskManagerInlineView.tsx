@@ -10,16 +10,6 @@ import { concat } from "@personal-os/core/src/utils/classname-utils";
 export default function TaskManagerInlineView({ date }: { date: Date }) {
     const { ctx } = useContext(InlineObsidianContext)!;
 
-    const getPeriod = (c: Commitment) => {
-        let classPeriod = ctx.commitments.getClass(c)?.period;
-        if (classPeriod) return classPeriod;
-
-        let project = ctx.commitments.getProject(c);
-        if (!project) return;
-
-        return ctx.commitments.getClass(project)?.period;
-    }
-
     const provider = ctx.commitments;
 
     const key = formatDate(date);
@@ -54,7 +44,7 @@ export default function TaskManagerInlineView({ date }: { date: Date }) {
     }
 
     const csWithoutClass = commitments.filter(c => c.role === "task").filter(c => {
-        const period = getPeriod(c);
+        const period = ctx.commitments.getPeriod(c);
         if (period == undefined) return true;
 
         const found = dayInfo.blocks.some(block => block.period == period);

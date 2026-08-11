@@ -21,16 +21,6 @@ export interface DayProps {
 function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
     const { settings, ctx } = useContext(ObsidianContext)!;
 
-    const getPeriod = (c: Commitment) => {
-        let classPeriod = ctx.commitments.getClass(c)?.period;
-        if (classPeriod) return classPeriod;
-
-        let project = ctx.commitments.getProject(c);
-        if (!project) return;
-
-        return ctx.commitments.getClass(project)?.period;
-    }
-
     const tagRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
@@ -66,7 +56,7 @@ function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
     );
 
     const csWithoutClass = commitments.filter(c => {
-        const period = getPeriod(c);
+        const period = ctx.commitments.getPeriod(c);
         if (period == undefined) return true;
 
         const found = dayInfo.blocks.some(block => block.period == period);
@@ -80,7 +70,7 @@ function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
     const belowShown = csWithoutClass.length > 0;
     const aboveShown =
         dayInfo.blocks.some(block =>
-            commitments.some(c => getPeriod(c) == block.period)
+            commitments.some(c => ctx.commitments.getPeriod(c) == block.period)
         );
 
     const { setNodeRef, isOver } = useDroppable({

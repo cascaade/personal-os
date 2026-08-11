@@ -13,17 +13,7 @@ function TaskManagerGroup({commitments, block, dayInfo}: {
 }) {
     const { ctx, settings } = useContext(InlineObsidianContext)!;
 
-    const getPeriod = (c: Commitment) => {
-        let classPeriod = ctx.commitments.getClass(c)?.period;
-        if (classPeriod) return classPeriod;
-
-        let project = ctx.commitments.getProject(c);
-        if (!project) return;
-
-        return ctx.commitments.getClass(project)?.period;
-    }
-
-    const cs = commitments.filter(c => c.role === "task").filter(c => getPeriod(c) == block.period);
+    const cs = commitments.filter(c => c.role === "task").filter(c => ctx.commitments.getPeriod(c) == block.period);
 
     const createNewCommitment = () => {
         ctx.commitments.createNewCommitment()
