@@ -33,10 +33,12 @@ export class InlineTaskManagerView {
         const shouldShow = this.shouldShowFor(view);
         const alreadyMounted = this.roots.has(view);
 
-        if (shouldShow && !alreadyMounted) {
-            this.mount(view);
-        } else if (!shouldShow && alreadyMounted) {
+        if (alreadyMounted) {
             this.unmount(view);
+        }
+
+        if (shouldShow) {
+            this.mount(view);
         }
     }
 

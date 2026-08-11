@@ -1,12 +1,9 @@
 :root {
     --cascaades-task-manager-accent: #6bfff3;
-    --schedule-color-bg: rgba(255, 255, 0, 0.1);
-    --schedule-color-accent: rgb(89 89 0);
-    --error-color-accent: rgb(89 25 0);
 
-    --assignment-color-accent: #4d3636;
-    --classwork-color-accent: #374359;
-    --project-color-accent: #395241;
+    --tm-assignment-color-accent: #402d2d;
+    --tm-classwork-color-accent: #2b3240;
+    --tm-project-color-accent: #1d2920;
 }
 
 .view-content {
@@ -56,16 +53,21 @@
     display: flex;
     flex-direction: column;
 
-    max-width: var(--file-line-width);
+    max-width: var(--metadata-max-width);
     margin: auto;
+    transform: translateX(calc(var(--size-4-1) * -1 * var(--direction)));
 
     --calendar-table-border: 1px solid var(--background-modifier-border);
 
     margin-block-end: 2rem;
 
-    background: var(--background-primary-alt);
-    padding: var(--size-4-3) var(--size-4-5);
-    border-radius: var(--radius-l);
+    /*background: var(--background-primary-alt);*/
+
+    hr {
+        margin: 0 auto var(--size-4-2)!important;
+        width: 80%;
+        border-radius: var(--radius-s);
+    }
 }
 
 h2 {
@@ -73,6 +75,108 @@ h2 {
     line-height: 1.2;
     font-size: 1em;
     font-weight: var(--font-medium);
+    display: inline-block;
     padding: var(--size-4-1);
     margin-block-end: var(--size-4-2);
 }
+
+.task-commitment a {
+    color: var(--text-accent);
+    text-decoration: none;
+    margin-left: var(--size-4-2);
+    display: inline-block;
+    flex-grow: 1;
+
+    &:hover {
+        color: var(--text-accent-hover);
+        text-decoration: underline;
+    }
+}
+
+.task-commitment {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+
+    background-color: var(--color-base-25);
+    border-radius: var(--radius-l);
+    padding: var(--size-4-2);
+    margin-bottom: var(--size-4-1);
+
+    touch-action: none;
+
+    select {
+        background-color: var(--background-primary-alt);
+        padding: 0 1.6em 0 0.8em;
+        border-radius: var(--radius-s);
+        cursor: pointer;
+        height: unset;
+    }
+}
+
+.task-commitment.dragging {
+    font-size: .9em;
+}
+
+.task-commitment.new-task-commitment {
+    padding: 0 var(--size-2-2);
+    border-radius: var(--radius-m);
+    background: none;
+    border: 1px dashed var(--background-modifier-border);
+    text-align: center;
+    color: var(--text-faint);
+    cursor: pointer;
+    opacity: 0;
+    justify-content: center;
+    transition: opacity .2s ease, color .2s ease, border .2s ease;
+
+    margin-bottom: 0;
+
+    font-size: .9em;
+    line-height: 1.3;
+
+    &:hover {
+        color: var(--text-muted);
+        border: 1px dashed var(--background-modifier-border-hover);
+        opacity: 1;
+    }
+}
+
+.task-manager-block {
+    margin-bottom: var(--size-4-2);
+
+    background: var(--color-base-05);
+    border: 1px solid var(--color-base-20);
+    border-radius: var(--radius-l);
+    padding: var(--size-4-1);
+
+    font-size: .9em;
+
+    .task-manager-block-header {
+        display: flex;
+        justify-content: space-between;
+        padding: 0 var(--size-4-2) var(--size-2-2);
+        color: var(--text-muted);
+        font-size: .8em;
+    }
+
+    &:hover > .task-commitment.new-task-commitment {
+        opacity: 1;
+    }
+}
+
+/* ALL COLORED */
+
+.task-commitment.role-assignment {
+    background: var(--tm-assignment-color-accent);
+}
+
+.task-commitment.role-classwork {
+    background: var(--tm-classwork-color-accent);
+}
+
+.task-commitment.role-project_expo {
+    background: var(--tm-project-color-accent);
+}
+
+/* END COLORED */

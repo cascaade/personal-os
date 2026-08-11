@@ -509,6 +509,32 @@ export class CommitmentsProvider {
         return this.cacheByPath.get(file.path);
     }
 
+    public async createNewCommitment() {
+        const template = this.ctx.obsidian.getApp().vault.getFileByPath(this.ctx.settings.commitmentTemplateLocation);
+
+        const contents = template
+            ? await this.ctx.obsidian.getApp().vault.cachedRead(template)
+            : "";
+
+        const path = this.ctx.settings.newCommitmentDefaultFolder + "Untitled commitment";
+        const ext = ".md";
+
+        let preExist = this.ctx.obsidian.getApp().vault.getAbstractFileByPath(path + ext);
+        let i = 0;
+
+        while (preExist instanceof TFile && i < MAX_LOOSE_FILES) {
+            i++;
+            preExist = this.ctx.obsidian.getApp().vault.getAbstractFileByPath(path + " " + i + ext);
+        }
+
+        const file = await this.ctx.obsidian.getApp().vault.create(
+            path + ( i === 0 ? "" : " " + i ) + ext,
+            contents
+        );
+
+        return file;
+    }
+
     public async modifyCommitmentFrontmatter(file: TFile, fm: CommitmentFrontmatter) {
         await this.ctx.obsidian.getApp().fileManager.processFrontMatter(file, (frontmatter: CommitmentFrontmatter) => {
             frontmatter.type = fm.type ?? frontmatter.type;

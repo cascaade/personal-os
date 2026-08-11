@@ -3,10 +3,22 @@ import TaskManagerPlugin from './main';
 
 export interface TaskManagerSettings {
     mySetting: string;
+    twentyFourHourDisplayTime: boolean;
+    showAmPmDisplayTime: boolean;
+    commitmentTemplateLocation: string;
+    newCommitmentDefaultFolder: string;
+    dailyTemplateLocation: string;
+    newDailyDefaultFolder: string;
 }
 
 export const DEFAULT_SETTINGS: TaskManagerSettings = {
     mySetting: 'default',
+    twentyFourHourDisplayTime: false,
+    showAmPmDisplayTime: false,
+    commitmentTemplateLocation: 'Templates/Commitment.md',
+    newCommitmentDefaultFolder: 'Commitments/',
+    dailyTemplateLocation: 'Templates/Daily.md',
+    newDailyDefaultFolder: 'Daily/'
 };
 
 export class TaskManagerSettingTab extends PluginSettingTab {

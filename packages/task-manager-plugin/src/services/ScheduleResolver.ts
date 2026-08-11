@@ -147,4 +147,4 @@ class ScheduleResolver {
     }
 }
 
-export const calendarResolver = new ScheduleResolver();
+export const scheduleResolver = new ScheduleResolver();

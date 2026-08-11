@@ -18,18 +18,38 @@ export default class TaskManagerPlugin extends Plugin {
             (leaf) => new TaskManagerView(leaf, this, this.settings),
         );
 
+        const syncAllMarkdownLeaves = () => {
+            for (const leaf of this.app.workspace.getLeavesOfType("markdown")) {
+                const view = leaf.view;
+
+                if (view instanceof MarkdownView) {
+                    void this.inlineView.sync(view);
+                }
+            }
+        };
+
         this.registerEvent(
-            this.app.workspace.on('active-leaf-change', () => {
-                const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-                void this.inlineView.sync(view);
-            })
+            this.app.workspace.on("layout-change", syncAllMarkdownLeaves)
         );
 
         this.registerEvent(
-            this.app.workspace.on('editor-change', () => {
-                const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-                void this.inlineView.sync(view);
-            })
+            this.app.workspace.on("active-leaf-change", syncAllMarkdownLeaves)
+        );
+
+        this.registerEvent(
+            this.app.vault.on("modify", syncAllMarkdownLeaves)
+        );
+
+        this.registerEvent(
+            this.app.vault.on("rename", syncAllMarkdownLeaves)
+        );
+
+        this.registerEvent(
+            this.app.vault.on("create", syncAllMarkdownLeaves)
+        );
+
+        this.registerEvent(
+            this.app.vault.on("delete", syncAllMarkdownLeaves)
         );
 
         const openTaskManager = async () => {
