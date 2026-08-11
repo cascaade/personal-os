@@ -4,6 +4,7 @@
     "description": "A productivity software designed to interface agentic AI with apps like Obsidian and IntelliJ to create the ultimate task tracker.",
     "main": "index.js",
     "private": true,
+    "packageManager": "npm@10.9.2",
     "workspaces": [
         "packages/*"
     ],
@@ -11,6 +12,7 @@
         "doc": "docs"
     },
     "scripts": {
+        "build": "turbo run build",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "repository": {
