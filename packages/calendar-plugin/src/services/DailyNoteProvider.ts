@@ -66,6 +66,8 @@ export class DailyNoteProvider {
         const fm = this.ctx.obsidian.getFrontmatter(file) as DailyNoteFrontmatter;
         if (fm?.type !== "daily") return null;
 
+        if (typeof fm.date != "string") return null;
+
         return {
             type: "daily",
             file: file,
