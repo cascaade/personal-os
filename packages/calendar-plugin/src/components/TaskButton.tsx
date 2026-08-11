@@ -54,17 +54,19 @@ function TaskButton({ complete, total, onClick }: { complete: number, total: num
                     strokeWidth="16"
                     strokeLinecap="round"
                 />
-                <path
-                    id="progress"
-                    d={ `M${ start_point.x } ${ start_point.y } A${ radius } ${ radius } 0 1 1 ${ end_point.x } ${ end_point.y }` }
-                    fill="none"
-                    stroke="var(--progress-color)"
-                    strokeWidth="16"
-                    strokeLinecap="round"
-                    pathLength="100"
-                    strokeDasharray="101"
-                    strokeDashoffset={ 100 - ( complete / total ) * 100 }
-                />
+                {total > 0 && complete > 0 && (
+                    <path
+                        id="progress"
+                        d={ `M${ start_point.x } ${ start_point.y } A${ radius } ${ radius } 0 1 1 ${ end_point.x } ${ end_point.y }` }
+                        fill="none"
+                        stroke="var(--progress-color)"
+                        strokeWidth="16"
+                        strokeLinecap="round"
+                        pathLength="100"
+                        strokeDasharray="101"
+                        strokeDashoffset={ 100 - ( complete / total ) * 100 }
+                    />
+                )}
                 <path
                     d={ `M${ check_bottom.x - check_small_offset } ${ check_bottom.y - check_small_offset } L${ check_bottom.x } ${ check_bottom.y } L${ check_bottom.x + check_big_offset } ${ check_bottom.y - check_big_offset }` }
                     fill="none"

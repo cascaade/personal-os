@@ -73,6 +73,9 @@ function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
         return !found;
     });
 
+    const tasks = commitments.filter(c => c.role === "task");
+    const done = tasks.filter(c => c.status === "done");
+
     const hoverShown = controlDown && dayInfo.blocks.length > 0;
     const belowShown = csWithoutClass.length > 0;
     const aboveShown =
@@ -149,7 +152,7 @@ function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
         >
             <div className="day-header">
                 <div className="day-options">
-                    <TaskButton complete={ 2 } total={ 5 } onClick={ () => {
+                    <TaskButton complete={ done.length } total={ tasks.length } onClick={ () => {
                         calendarContext.dailies.getOrCreateNewDailyNote(dayInfo.date)
                             .then(file => calendarContext.obsidian.openInRightPane(file))
                             .catch(console.error);

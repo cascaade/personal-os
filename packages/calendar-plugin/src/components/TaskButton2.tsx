@@ -30,7 +30,9 @@ function TaskButton2({ complete, total, onClick }: { complete: number, total: nu
                     strokeLinejoin="round"
                 />
             </svg>
-            <div className="task-button-fill" style={{height: `${complete/total * 100}%`}}></div>
+            {total > 0 && complete > 0 && (
+                <div className="task-button-fill" style={{height: `${complete/total * 100}%`}}></div>
+            )}
         </div>
     );
 }
