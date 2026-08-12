@@ -1,7 +1,6 @@
 import { useCallback, useContext, useSyncExternalStore } from "react";
 import { formatDate, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import CommitmentEl from "@/components/CommitmentEl";
-import { scheduleResolver } from "@personal-os/obsidian/dist/services/ScheduleResolver";
 import TaskManagerGroup from "@/components/TaskManagerGroup";
 import { concat } from "@personal-os/core/dist/utils/classname-utils";
 import { ObsidianContext } from "@/context/ObsidianContext";
@@ -29,7 +28,7 @@ export default function TaskManagerInlineView({ date }: { date: Date }) {
         getSnapshot
     );
 
-    const dayInfo = scheduleResolver.get(date);
+    const dayInfo = ctx.scheduleResolver.get(date);
 
     const createNewCommitment = () => {
         ctx.commitments.createNewCommitment().then(async (f) => {

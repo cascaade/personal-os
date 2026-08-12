@@ -1,18 +1,18 @@
-import schedules from "@personal-os/core/mock/schedules.json";
 import {
     collapseBlockSchedule,
-    DayInfo,
     parseBlockSchedule,
-    Schedule,
     sortBlockSchedule
 } from "@personal-os/core/dist/utils/schedule-utils";
 import { formatDate } from "@personal-os/core/dist/utils/date-utils";
+import { DayInfo, Schedule } from "@personal-os/core/dist/utils/schedule-types";
 
-class ScheduleResolver {
+export default class ScheduleResolver {
     private cache = new Map<string, DayInfo>();
 
+    constructor(private schedules: Schedule[] = []) {}
+
     private calculate(date: Date): DayInfo {
-        const schedule: Schedule = (schedules as Schedule[]).find((schedule: Schedule) => {
+        const schedule: Schedule = this.schedules.find((schedule: Schedule) => {
             const from = new Date(schedule.effective_from);
             const to = new Date(schedule.effective_to);
 
@@ -152,5 +152,3 @@ class ScheduleResolver {
 
     }
 }
-
-export const scheduleResolver = new ScheduleResolver();

@@ -1,5 +1,7 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import CalendarPlugin from './main';
+import { Schedule } from '@personal-os/core/dist/utils/schedule-types';
+import { ScheduleEditor } from './obsidian/schedule-editor';
 
 export interface CalendarSettings {
     mySetting: string;
@@ -9,6 +11,7 @@ export interface CalendarSettings {
     newCommitmentDefaultFolder: string;
     dailyTemplateLocation: string;
     newDailyDefaultFolder: string;
+    schedules: Schedule[];
 }
 
 export const DEFAULT_SETTINGS: CalendarSettings = {
@@ -18,7 +21,8 @@ export const DEFAULT_SETTINGS: CalendarSettings = {
     commitmentTemplateLocation: 'Templates/Commitment.md',
     newCommitmentDefaultFolder: 'Commitments/',
     dailyTemplateLocation: 'Templates/Daily.md',
-    newDailyDefaultFolder: 'Daily/'
+    newDailyDefaultFolder: 'Daily/',
+    schedules: [],
 };
 
 export class CalendarSettingTab extends PluginSettingTab {
@@ -46,5 +50,17 @@ export class CalendarSettingTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     }),
             );
+
+        containerEl.createEl('h3', { text: 'Schedule' });
+
+        new ScheduleEditor(
+            this.app,
+            containerEl.createDiv(),
+            () => this.plugin.settings.schedules,
+            async (schedules) => {
+                this.plugin.settings.schedules = schedules;
+                await this.plugin.saveSettings();
+            },
+        ).render();
     }
 }

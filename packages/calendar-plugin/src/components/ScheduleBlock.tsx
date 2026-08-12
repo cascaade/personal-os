@@ -4,9 +4,9 @@ import { dateToMinutes, formatDate, minutesToTime, toLocalISOString } from "@per
 import CommitmentEl from "@/components/CommitmentEl";
 import { ObsidianContext } from "@/views/CalendarView";
 import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
-import { DayInfo, ParsedBlock } from "@personal-os/core/dist/utils/schedule-utils";
 import { ROW_HEIGHT_EASE_TIME_MS } from "@/components/Calendar";
 import { useDroppable } from "@dnd-kit/core";
+import { DayInfo, ParsedBlock } from "@personal-os/core/dist/utils/schedule-types";
 
 function ScheduleBlock({ commitments, block, dayInfo, optionDown }: {
     commitments: readonly Commitment[],

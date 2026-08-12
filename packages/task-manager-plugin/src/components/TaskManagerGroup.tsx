@@ -1,10 +1,10 @@
 import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { memo, useContext } from "react";
-import { DayInfo, ParsedBlock } from "@personal-os/core/dist/utils/schedule-utils";
 import CommitmentEl from "@/components/CommitmentEl";
 import { formatDate, minutesToTime, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import { concat } from "@personal-os/core/dist/utils/classname-utils";
 import { ObsidianContext } from "@/context/ObsidianContext";
+import { DayInfo, ParsedBlock } from "@personal-os/core/dist/utils/schedule-types";
 
 function TaskManagerGroup({commitments, block, dayInfo}: {
     commitments: readonly Commitment[],

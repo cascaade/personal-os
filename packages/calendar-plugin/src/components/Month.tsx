@@ -1,7 +1,7 @@
 import Day from "@/components/Day";
-import { scheduleResolver } from "@personal-os/obsidian/dist/services/ScheduleResolver";
-import { memo, RefObject } from "react";
+import { memo, RefObject, useContext } from "react";
 import { LoadedMonth } from "@/components/Calendar";
+import { ObsidianContext } from "@/views/CalendarView";
 
 export interface MonthProps {
     loadedMonth: LoadedMonth;
@@ -13,6 +13,8 @@ export interface MonthProps {
 }
 
 function Month({ loadedMonth, monthRefs, index, visibleMonth, controlDown, optionDown }: MonthProps) {
+    const { ctx } = useContext(ObsidianContext)!;
+
     const { month } = loadedMonth;
 
     return (
@@ -30,7 +32,7 @@ function Month({ loadedMonth, monthRefs, index, visibleMonth, controlDown, optio
             {loadedMonth.dates.map((date) => (
                 <Day
                     key={date.toISOString()}
-                    dayInfo={scheduleResolver.get(date)}
+                    dayInfo={ctx.scheduleResolver.get(date)}
                     controlDown={controlDown}
                     optionDown={optionDown}
                     thisMonth={
