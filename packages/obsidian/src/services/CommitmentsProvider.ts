@@ -1,5 +1,5 @@
 import { Notice, TFile } from "obsidian";
-import { formatDate, parseLocalDate, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
+import { formatDate, getDayGap, parseLocalDate, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import PersonalOSContext from "./PersonalOSContext";
 import { ConfirmModal } from "../components/ConfirmModal";
 
@@ -689,7 +689,7 @@ export class CommitmentsProvider {
     private hasDuplicateOnDay(
         commitment: Commitment,
         day: Date,
-    ): boolean {
+    ) {
         const originalPath = this.getOriginalPath(commitment);
 
         if (!originalPath) return false;
@@ -705,7 +705,7 @@ export class CommitmentsProvider {
             original.due &&
             formatDate(original.due) === dayKey
         ) {
-            return true;
+            return original;
         }
 
         // Check all duplicates.
@@ -723,7 +723,7 @@ export class CommitmentsProvider {
                 duplicate.due &&
                 formatDate(duplicate.due) === dayKey
             ) {
-                return true;
+                return duplicate;
             }
         }
 
@@ -761,9 +761,17 @@ export class CommitmentsProvider {
             due = date;
         }
 
-        if (due && this.hasDuplicateOnDay(commitment, due)) {
-            new Notice("A duplicate already exists on that day");
-            return;
+        if (due) {
+            const dupe = this.hasDuplicateOnDay(commitment, due);
+
+            if (dupe) {
+                new Notice("A duplicate already exists on that day");
+                this.setLastDuplicate({
+                    commitment: dupe,
+                    dayGap: this.lastDuplicate?.dayGap ?? 1,
+                })
+                return;
+            }
         }
 
         const contents = await vault.cachedRead(originalFile);
