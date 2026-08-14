@@ -64,14 +64,14 @@ export class InlineTaskManagerView {
         if (!file || this.ctx.obsidian.isInTemplatesFolder(file)) return false;
 
         const frontmatter = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
-        return frontmatter?.type === "daily";
+        return frontmatter?.type === "daily" || (frontmatter?.type === "commitment" && frontmatter?.role == "project");
     }
 
     private mount(view: MarkdownView) {
         const container = view.contentEl.querySelector(".metadata-container");
         if (!container) return;
 
-        const mountPoint = document.createElement("div");
+        const mountPoint = createDiv();
         mountPoint.addClass("task-manager-inline-view");
         container.insertAdjacentElement("afterend", mountPoint);
 
@@ -79,13 +79,14 @@ export class InlineTaskManagerView {
         if (!file) return;
 
         const date = this.ctx.dailies.getDailyByFile(file)?.date;
-        if (!date) return;
+        const proj = this.ctx.commitments.getCommitment(file);
+        if (!date && !proj) return;
 
         const root = createRoot(mountPoint);
         root.render(
             <ObsidianContext.Provider
                 value={{ app: this.plugin.app, ctx: this.ctx, settings: this.settings, leaf: view.leaf }}>
-                <TaskManagerInlineView date={date}/>
+                <TaskManagerInlineView date={date} proj={proj}/>
             </ObsidianContext.Provider>,
         );
 
