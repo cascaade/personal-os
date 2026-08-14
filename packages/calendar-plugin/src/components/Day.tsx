@@ -153,7 +153,15 @@ function Day({ dayInfo, thisMonth, controlDown, optionDown }: DayProps) {
                 <div
                     className={ concat("day-number-container", thisMonth && "this-month", dayInfo.date.toDateString() == now.toDateString() && "today") }
                 >
-                    { dayInfo.date.getDate() == 1 && MONTHS_OF_YEAR_TRUNC[dayInfo.date.getMonth()] + " " }
+                    { dayInfo.date.getDate() == 1 && (
+                        <span
+                            className={ concat(
+                                "month-header"
+                            ) }
+                        >
+                            { MONTHS_OF_YEAR_TRUNC[dayInfo.date.getMonth()] }&nbsp;
+                        </span>
+                    ) }
                     <span
                         className={ concat(
                             "day-number"
