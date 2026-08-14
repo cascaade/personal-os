@@ -37,7 +37,7 @@ function TaskButton({ complete, total, onClick }: { complete: number, total: num
     useEffect(() => {
         if (!tagRef.current) return;
 
-        setTooltip(tagRef.current, `${ complete } / ${ total }`, {
+        setTooltip(tagRef.current, total == 0 ? "No tasks" : `${ complete } / ${ total }`, {
             placement: "top",
             delay: 200,
         });

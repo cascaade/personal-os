@@ -37,7 +37,7 @@ export default function TaskManagerInlineView({ date, proj }: { date?: Date, pro
         const createNewCommitment = () => {
             ctx.commitments.createNewCommitment().then(async (f) => {
                 await ctx.commitments.modifyCommitmentFrontmatter(f, {
-                    role: "event",
+                    role: "task",
                     assigned: toLocalISOString(new Date()),
                     due: formatDate(dayInfo.date)
                 });
@@ -91,7 +91,7 @@ export default function TaskManagerInlineView({ date, proj }: { date?: Date, pro
             const c = ctx.commitments.getCommitment(f);
             const p = c && ctx.commitments.getProject(c);
             await ctx.commitments.modifyCommitmentFrontmatter(f, {
-                role: "event",
+                role: "task",
                 assigned: toLocalISOString(new Date()),
                 project: p ? `[[${ c.file.path }]]` : "",
             });

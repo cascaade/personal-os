@@ -257,3 +257,296 @@ export function getDayGap(from: Date, to: Date): number {
 export function dateToMinutes(date: Date) {
     return date.getMinutes() + date.getHours() * 60;
 }
+
+const NUMBER_WORDS = [
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "ten",
+    "eleven",
+    "twelve",
+    "thirteen",
+    "fourteen",
+    "fifteen",
+    "sixteen",
+    "seventeen",
+    "eighteen",
+    "nineteen",
+    "twenty",
+];
+
+type RelativeDateOptions = {
+    longNumbers?: boolean;
+    now?: Date;
+    excludeSpecificTime?: boolean;
+};
+
+
+
+export function relativeDate(
+    date: Date,
+    {
+        longNumbers = false,
+        excludeSpecificTime = false,
+        now = new Date(),
+    }: RelativeDateOptions = {},
+): string {
+    const target = date.getTime();
+    const current = now.getTime();
+
+    const startOfDay = (d: Date): number => {
+        const result = new Date(d);
+        result.setHours(0, 0, 0, 0);
+        return result.getTime();
+    };
+
+    /*
+     * When specific time is excluded, only compare calendar dates.
+     * Hours, minutes, seconds, and milliseconds are completely ignored.
+     */
+    if (excludeSpecificTime) {
+        const targetDay = startOfDay(date);
+        const currentDay = startOfDay(now);
+        const DAY = 24 * 60 * 60 * 1000;
+
+        const dayDifference = Math.round(
+            (targetDay - currentDay) / DAY,
+        );
+
+        if (dayDifference === 0) {
+            return "today";
+        }
+
+        if (dayDifference === 1) {
+            return "tomorrow";
+        }
+
+        if (dayDifference === -1) {
+            return "yesterday";
+        }
+    }
+
+    if (target === current) {
+        return "now";
+    }
+
+    const future = target > current;
+    const absoluteMs = Math.abs(target - current);
+
+    const number = (n: number) =>
+        longNumbers && n <= 20 ? NUMBER_WORDS[n] : n.toString();
+
+    const phrase = (
+        n: number,
+        unit: string,
+        past: boolean,
+    ) => {
+        const value = number(n);
+        const plural = n !== 1 ? "s" : "";
+
+        return past
+            ? `${value} ${unit}${plural} ago`
+            : `in ${value} ${unit}${plural}`;
+    };
+
+    const sameDay = startOfDay(date) === startOfDay(now);
+
+    const tomorrowStart = new Date(now);
+    tomorrowStart.setHours(0, 0, 0, 0);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
+    const yesterdayStart = new Date(now);
+    yesterdayStart.setHours(0, 0, 0, 0);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+
+    /*
+     * Precise time.
+     *
+     * Same-day events get a 6-hour window.
+     *
+     * Across midnight, the precise-time window is allowed to
+     * extend at most 3 hours into the adjacent calendar day.
+     */
+    const SIX_HOURS = 6 * 60 * 60 * 1000;
+    const THREE_HOURS = 3 * 60 * 60 * 1000;
+    const HOUR = 60 * 60 * 1000;
+    const MINUTE = 60 * 1000;
+    const SECOND = 1000;
+
+    const withinPreciseWindow = (() => {
+        if (sameDay) {
+            return absoluteMs <= SIX_HOURS;
+        }
+
+        if (future) {
+            // Tomorrow can enter the precise-time window, but
+            // never more than 3 hours past midnight.
+            if (startOfDay(date) === tomorrowStart.getTime()) {
+                const timeSinceMidnight =
+                    target - tomorrowStart.getTime();
+
+                return (
+                    absoluteMs <= SIX_HOURS &&
+                    timeSinceMidnight <= THREE_HOURS
+                );
+            }
+
+            return false;
+        }
+
+        // Symmetric rule for yesterday.
+        if (startOfDay(date) === yesterdayStart.getTime()) {
+            const timeUntilMidnight =
+                yesterdayStart.getTime() + 24 * HOUR - target;
+
+            return (
+                absoluteMs <= SIX_HOURS &&
+                timeUntilMidnight <= THREE_HOURS
+            );
+        }
+
+        return false;
+    })();
+
+    if (withinPreciseWindow) {
+        if (absoluteMs < MINUTE) {
+            return phrase(
+                Math.floor(absoluteMs / SECOND),
+                "second",
+                !future,
+            );
+        }
+
+        if (absoluteMs < HOUR) {
+            return phrase(
+                Math.floor(absoluteMs / MINUTE),
+                "minute",
+                !future,
+            );
+        }
+
+        return phrase(
+            Math.floor(absoluteMs / HOUR),
+            "hour",
+            !future,
+        );
+    }
+
+    /*
+     * Calendar-relative day names.
+     */
+
+    const targetDay = startOfDay(date);
+    const today = startOfDay(now);
+
+    if (targetDay === today) {
+        return "today";
+    }
+
+    if (targetDay === tomorrowStart.getTime()) {
+        return "tomorrow";
+    }
+
+    if (targetDay === yesterdayStart.getTime()) {
+        return "yesterday";
+    }
+
+    /*
+     * Days
+     *
+     * <= 10 days stays in days.
+     */
+    const DAY = 24 * HOUR;
+    const days = Math.floor(absoluteMs / DAY);
+
+    if (days <= 10) {
+        return phrase(days, "day", !future);
+    }
+
+    /*
+     * Weeks
+     *
+     * Future: <= 12 weeks
+     * Past:   <= 6 weeks
+     */
+    const WEEK = 7 * DAY;
+    const weeks = Math.floor(absoluteMs / WEEK);
+
+    if (future && weeks <= 12) {
+        if (weeks === 1) {
+            return "next week";
+        }
+
+        return phrase(weeks, "week", false);
+    }
+
+    if (!future && weeks <= 6) {
+        if (weeks === 1) {
+            return "last week";
+        }
+
+        return phrase(weeks, "week", true);
+    }
+
+    /*
+     * Calendar months.
+     *
+     * Calculate whole calendar-month distance rather than
+     * treating a month as a fixed number of milliseconds.
+     */
+    const monthDifference = (
+        from: Date,
+        to: Date,
+    ): number => {
+        return (
+            (to.getFullYear() - from.getFullYear()) * 12 +
+            (to.getMonth() - from.getMonth())
+        );
+    };
+
+    const months = Math.abs(monthDifference(now, date));
+
+    /*
+     * A date in the immediately adjacent calendar month gets
+     * "last month" / "next month".
+     */
+    if (future && monthDifference(now, date) === 1) {
+        return "next month";
+    }
+
+    if (!future && monthDifference(now, date) === -1) {
+        return "last month";
+    }
+
+    /*
+     * <= 12 months from the current calendar month stays in months.
+     */
+    if (months <= 12) {
+        return phrase(months, "month", !future);
+    }
+
+    /*
+     * Calendar years.
+     */
+    const yearDifference =
+        date.getFullYear() - now.getFullYear();
+
+    if (future && yearDifference === 1) {
+        return "next year";
+    }
+
+    if (!future && yearDifference === -1) {
+        return "last year";
+    }
+
+    const years = Math.abs(yearDifference);
+
+    return phrase(years, "year", !future);
+}

@@ -1,7 +1,7 @@
 import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { memo, useContext } from "react";
 import { concat } from "@personal-os/core/dist/utils/classname-utils";
-import { formatDate } from "@personal-os/core/dist/utils/date-utils";
+import { formatDate, relativeDate } from "@personal-os/core/dist/utils/date-utils";
 import { emptyStringIfFalsey } from "@personal-os/core/dist/utils/general-utils";
 import { ObsidianContext } from "@/context/ObsidianContext";
 
@@ -28,7 +28,7 @@ function CommitmentEl({ commitment, day }: { commitment: Commitment, day?: boole
             onClick={ (e) => {
                 e.preventDefault();
                 void ctx.obsidian.openInRightPane(commitment.file, leaf);
-            } }>{ commitment.status == "done" ? ( <del>{day && commitment.due && (formatDate(commitment.due) + ": ")} { commitment.title }</del> ) : ( emptyStringIfFalsey(day && commitment.due && (formatDate(commitment.due) + ": ")) + commitment.title ) }</a>
+            } }>{ commitment.status == "done" ? ( <del>{day && commitment.due && (relativeDate(commitment.due, { excludeSpecificTime: true }) + ": ")} { commitment.title }</del> ) : ( emptyStringIfFalsey(day && commitment.due && (relativeDate(commitment.due, { excludeSpecificTime: true }) + ": ")) + commitment.title ) }</a>
         { project && (
             <a className="task-project-tag" onClick={ (e) => {
                 e.preventDefault();
