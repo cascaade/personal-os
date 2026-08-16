@@ -1,0 +1,20 @@
+:root {
+    --cascaades-chatbot-accent: #a16bff;
+}
+
+.view-content {
+    container-type: inline-size;
+    container-name: view-container;
+}
+
+.workspace-tab-header[data-type="chatbot-view"] .workspace-tab-header-inner-icon {
+    color: var(--cascaades-chatbot-accent) !important;
+}
+
+.chatbot-ribbon-icon {
+    color: var(--cascaades-chatbot-accent);
+
+    &:hover, &:active {
+        color: var(--cascaades-chatbot-accent) !important;
+    }
+}

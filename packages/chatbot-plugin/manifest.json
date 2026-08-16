@@ -1,0 +1,9 @@
+{
+    "id": "cascaades-chatbot-plugin",
+    "name": "Chatbot Plugin",
+    "version": "1.0.0",
+    "minAppVersion": "1.7.2",
+    "description": "Chatbot interface",
+    "author": "cascaade",
+    "isDesktopOnly": true
+}
