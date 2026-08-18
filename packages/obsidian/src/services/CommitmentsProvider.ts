@@ -19,6 +19,8 @@ type CommitmentFrontmatter = {
     duplicate_of?: string;
 
     actual_effort?: number;
+    priority?: string;
+    recurrences?: string;
 }
 
 export type Commitment = {
@@ -40,6 +42,8 @@ export type Commitment = {
     duplicatePath?: string;
 
     actual_effort?: number;
+    priority?: string;
+    recurrences?: string[];
 }
 
 export interface LastDuplicate {
@@ -131,6 +135,7 @@ export class CommitmentsProvider {
             projectPath: fm.project,
             duplicatePath: fm.duplicate_of,
             actual_effort: fm.actual_effort != null ? Number(fm.actual_effort) : undefined,
+            priority: fm.priority != null ? fm.priority : undefined,
         };
     }
 
