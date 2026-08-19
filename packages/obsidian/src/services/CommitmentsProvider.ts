@@ -578,6 +578,7 @@ export class CommitmentsProvider {
             frontmatter.duplicate_of = fm.duplicate_of ?? frontmatter.duplicate_of;
 
             frontmatter.actual_effort = fm.actual_effort ?? frontmatter.actual_effort;
+            frontmatter.priority = fm.priority ?? frontmatter.priority;
         });
     }
 

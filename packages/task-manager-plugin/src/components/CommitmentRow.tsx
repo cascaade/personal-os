@@ -8,11 +8,12 @@ interface CommitmentRowProps {
     commitment: Commitment,
     depth?: number,
     error?: boolean,
+    overdue?: boolean,
     isProject?: boolean,
     effective: EffectiveFields,
 }
 
-export function CommitmentRow({ commitment, depth, error, isProject, effective }: CommitmentRowProps) {
+export function CommitmentRow({ commitment, depth, error, overdue, isProject, effective }: CommitmentRowProps) {
     const { ctx, leaf } = useContext(ObsidianContext)!;
 
     const [ editing, setEditing ] = useState(false);
@@ -48,8 +49,20 @@ export function CommitmentRow({ commitment, depth, error, isProject, effective }
         ? Math.round((effective.progress.done / effective.progress.total) * 100)
         : 0;
 
+    const rowClassName = [
+        "row",
+        error && "error",
+        overdue && "overdue",
+    ].filter(Boolean).join(" ");
+
+    // ⚠️ Cast is a stand-in — swap CommitmentFrontmatter for the real import
+    // if it isn't a Partial<...> already, otherwise this cast is unsound.
+    const updateFrontmatter = (patch: Record<string, unknown>) => {
+        void ctx.commitments.modifyCommitmentFrontmatter(commitment.file, patch as any);
+    };
+
     return (
-        <div className={ `row${ error ? " error" : "" }` }>
+        <div className={ rowClassName }>
             <div
                 className="cell title-cell"
                 onClick={ (e) => {
@@ -120,7 +133,10 @@ export function CommitmentRow({ commitment, depth, error, isProject, effective }
                         <div className="project-progress-fill" style={ { width: progressPct + "%" } }></div>
                     </div>
                 ) : (
-                    <select value={ commitment.status }>
+                    <select
+                        value={ commitment.status }
+                        onChange={ (e) => updateFrontmatter({ status: e.target.value }) }
+                    >
                         <option value="not-started">not started</option>
                         <option value="blocked">blocked</option>
                         <option value="in-progress">in progress</option>
@@ -131,7 +147,10 @@ export function CommitmentRow({ commitment, depth, error, isProject, effective }
             </div>
 
             <div className="cell">
-                <select value={ effective.priority }>
+                <select
+                    value={ effective.priority }
+                    onChange={ (e) => updateFrontmatter({ priority: e.target.value }) }
+                >
                     <option value="lowest">lowest</option>
                     <option value="low">low</option>
                     <option value="medium">medium</option>

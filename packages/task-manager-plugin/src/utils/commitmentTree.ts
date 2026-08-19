@@ -7,22 +7,24 @@ export interface ProgressInfo {
 }
 
 export interface EffectiveFields {
-    progress: ProgressInfo;      // rolled up from all descendant tasks; for a leaf, itself counts as 1
-    priority?: string;           // own value if set, else inferred
-    start?: Date;                // own value if set, else inferred
-    due?: Date;                  // own value if set, else inferred
+    progress: ProgressInfo;
+    priority?: string;
+    start?: Date;
+    due?: Date;
+    status?: string; // own value if set, else inferred from children
 }
 
 export interface CommitmentTreeNode {
     commitment: Commitment;
     children: CommitmentTreeNode[];
     error: boolean;
+    overdue: boolean;
     effective: EffectiveFields;
 }
 
 export interface CommitmentTree {
-    roots: CommitmentTreeNode[];
-    childlessRoots: CommitmentTreeNode[];
+    roots: CommitmentTreeNode[];          // tasks + projects that have children
+    childlessProjects: CommitmentTreeNode[]; // projects with zero children — separate table
 }
 
 export interface ProjectResolver {
@@ -31,6 +33,7 @@ export interface ProjectResolver {
 
 const RELEVANT_ROLES = new Set(["task", "project"]);
 const PRIORITY_ORDER = ["lowest", "low", "medium", "high", "highest"];
+const NOT_OVERDUE_STATUSES = new Set(["done", "suspended"]);
 
 function priorityRank(p?: string): number {
     return p ? PRIORITY_ORDER.indexOf(p) : -1;
@@ -52,7 +55,7 @@ export function buildCommitmentTree(
     const getNode = (c: Commitment): CommitmentTreeNode => {
         let node = nodeByPath.get(c.file.path);
         if (!node) {
-            node = { commitment: c, children: [], error: false, effective: EMPTY_EFFECTIVE };
+            node = { commitment: c, children: [], error: false, overdue: false, effective: EMPTY_EFFECTIVE };
             nodeByPath.set(c.file.path, node);
         }
         return node;
@@ -76,10 +79,10 @@ export function buildCommitmentTree(
         let terminal: CommitmentTreeNode;
 
         while (true) {
-            const path = cur!.file.path;
+            const path = cur.file.path;
 
             if (state.get(path) === "done") {
-                terminal = getNode(cur!);
+                terminal = getNode(cur);
                 break;
             }
 
@@ -102,12 +105,12 @@ export function buildCommitmentTree(
                 break;
             }
 
-            chain.push(cur!);
+            chain.push(cur);
             chainSet.add(path);
 
             const parent = getParent(cur);
             if (!parent) {
-                const node = getNode(cur!);
+                const node = getNode(cur);
                 state.set(path, "done");
                 allRoots.push(node);
                 chain.pop();
@@ -129,21 +132,24 @@ export function buildCommitmentTree(
         }
     }
 
-    // Bottom-up pass: fills in `effective` for every node, project rollups
-    // included. Iterative post-order — same reason as the climb above, a
-    // deep tree shouldn't be able to blow the call stack.
     attachEffectiveFields(allRoots);
 
     const roots: CommitmentTreeNode[] = [];
-    const childlessRoots: CommitmentTreeNode[] = [];
+    const childlessProjects: CommitmentTreeNode[] = [];
     for (const node of allRoots) {
-        (node.children.length > 0 ? roots : childlessRoots).push(node);
+        if (node.commitment.role === "project" && node.children.length === 0) {
+            childlessProjects.push(node);
+        } else {
+            roots.push(node); // bare tasks (always childless) land here, at top level
+        }
     }
 
-    return { roots, childlessRoots };
+    return { roots, childlessProjects };
 }
 
 function attachEffectiveFields(topNodes: CommitmentTreeNode[]) {
+    const now = Date.now();
+
     for (const top of topNodes) {
         const stack: { node: CommitmentTreeNode; visited: boolean }[] = [{ node: top, visited: false }];
 
@@ -157,7 +163,12 @@ function attachEffectiveFields(topNodes: CommitmentTreeNode[]) {
                 }
             } else {
                 stack.pop();
-                frame.node.effective = computeEffective(frame.node);
+                const eff = computeEffective(frame.node);
+                frame.node.effective = eff;
+                frame.node.overdue =
+                    eff.due != null &&
+                    eff.due.getTime() < now &&
+                    !NOT_OVERDUE_STATUSES.has(eff.status ?? "");
             }
         }
     }
@@ -166,15 +177,13 @@ function attachEffectiveFields(topNodes: CommitmentTreeNode[]) {
 function computeEffective(node: CommitmentTreeNode): EffectiveFields {
     const c = node.commitment;
 
-    // Leaf (a task, or a project with no children): nothing to roll up from,
-    // so "effective" is just its own fields. Its own completion counts as
-    // one unit toward whatever parent aggregates it.
     if (node.children.length === 0) {
         return {
             progress: { done: c.status === "done" ? 1 : 0, total: 1 },
             priority: c.priority,
             start: c.start,
             due: c.due,
+            status: c.status,
         };
     }
 
@@ -184,6 +193,7 @@ function computeEffective(node: CommitmentTreeNode): EffectiveFields {
     let latestDue: Date | undefined;
     let bestPriorityRank = -1;
     let bestPriority: string | undefined;
+    let anyInProgress = false;
 
     for (const child of node.children) {
         const eff = child.effective;
@@ -203,13 +213,21 @@ function computeEffective(node: CommitmentTreeNode): EffectiveFields {
             bestPriorityRank = rank;
             bestPriority = eff.priority;
         }
+
+        if (eff.status === "in-progress") anyInProgress = true;
     }
+
+    let inferredStatus: string;
+    if (totalSum > 0 && doneSum === totalSum) inferredStatus = "done";
+    else if (doneSum > 0 || anyInProgress) inferredStatus = "in-progress";
+    else inferredStatus = "not-started";
 
     return {
         progress: { done: doneSum, total: totalSum },
-        priority: c.priority ?? bestPriority, // own value wins — that's the override
+        priority: c.priority ?? bestPriority,
         start: c.start ?? earliestStart,
         due: c.due ?? latestDue,
+        status: c.status ?? inferredStatus,
     };
 }
 
@@ -233,4 +251,36 @@ export function sortTree(roots: CommitmentTreeNode[], newestFirst: boolean): Com
     }
 
     return sortedRoots;
+}
+
+// upcoming: not-yet-past, OR overdue (still outstanding work).
+// past: actually in the past AND resolved (done/suspended) — i.e. history.
+// A node with no descendants matching stays hidden, but its ancestor chain
+// is preserved so context (which project it's under) doesn't get orphaned.
+export function filterTreeForView(
+    nodes: CommitmentTreeNode[],
+    viewMode: "upcoming" | "past"
+): CommitmentTreeNode[] {
+    const now = Date.now();
+
+    const matches = (node: CommitmentTreeNode): boolean => {
+        const due = node.effective.due?.getTime();
+        if (viewMode === "upcoming") {
+            return due == null || due >= now || node.overdue;
+        }
+        return due != null && due < now && !node.overdue;
+    };
+
+    const filterList = (list: CommitmentTreeNode[]): CommitmentTreeNode[] => {
+        const result: CommitmentTreeNode[] = [];
+        for (const node of list) {
+            const filteredChildren = filterList(node.children);
+            if (matches(node) || filteredChildren.length > 0) {
+                result.push({ ...node, children: filteredChildren });
+            }
+        }
+        return result;
+    };
+
+    return filterList(nodes);
 }

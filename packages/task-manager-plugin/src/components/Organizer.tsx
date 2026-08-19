@@ -1,9 +1,9 @@
 import { CalendarClock, CalendarPlus, CircleCheck, FileText, Flag, Repeat, History, ListTodo } from "lucide-react";
 import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { Fragment, useContext, useMemo, useState } from "react";
-import { CommitmentRow } from "@/components/CommitmentRow";
-import { buildCommitmentTree, CommitmentTreeNode, sortTree } from "@/utils/commitmentTree";
 import { ObsidianContext } from "@/context/ObsidianContext";
+import { CommitmentRow } from "@/components/CommitmentRow";
+import { buildCommitmentTree, CommitmentTreeNode, filterTreeForView, sortTree } from "@/utils/commitmentTree";
 
 type ViewMode = "upcoming" | "past";
 
@@ -15,12 +15,15 @@ export default function Organizer({ commitments }: OrganizerProps) {
     const { ctx } = useContext(ObsidianContext)!;
     const [viewMode, setViewMode] = useState<ViewMode>("upcoming");
 
-    const { roots, childlessRoots } = useMemo(() => {
+    const { roots, childlessProjects } = useMemo(() => {
         const tree = buildCommitmentTree(commitments, ctx.commitments);
         const newestFirst = viewMode === "past";
+
+        const filteredRoots = filterTreeForView(tree.roots, viewMode);
+
         return {
-            roots: sortTree(tree.roots, newestFirst),
-            childlessRoots: sortTree(tree.childlessRoots, newestFirst),
+            roots: sortTree(filteredRoots, newestFirst),
+            childlessProjects: sortTree(tree.childlessProjects, newestFirst), // unfiltered — full reference list
         };
     }, [commitments, ctx.commitments, viewMode]);
 
@@ -30,6 +33,7 @@ export default function Organizer({ commitments }: OrganizerProps) {
                 commitment={node.commitment}
                 depth={depth}
                 error={node.error}
+                overdue={node.overdue}
                 isProject={node.commitment.role === "project"}
                 effective={node.effective}
             />
@@ -60,9 +64,9 @@ export default function Organizer({ commitments }: OrganizerProps) {
                 <div className="cell"><Repeat className="header-icon" /> Recurrences</div>
             </div>
             {roots.map((root) => renderNode(root, 0))}
-            {childlessRoots.map((node) => (
-                <CommitmentRow key={node.commitment.file.path} commitment={node.commitment} depth={0} error={node.error} effective={node.effective} />
-            ))}
         </div>
+
+        {/* Reference list — not rendered as a table here, just exposed as data. */}
+        {/* {childlessProjects} */}
     </div>);
 }
