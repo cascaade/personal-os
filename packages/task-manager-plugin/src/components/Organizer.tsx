@@ -26,7 +26,13 @@ export default function Organizer({ commitments }: OrganizerProps) {
 
     const renderNode = (node: CommitmentTreeNode, depth: number) => (
         <Fragment key={node.commitment.file.path}>
-            <CommitmentRow commitment={node.commitment} depth={depth} error={node.error} />
+            <CommitmentRow
+                commitment={node.commitment}
+                depth={depth}
+                error={node.error}
+                isProject={node.commitment.role === "project"}
+                effective={node.effective}
+            />
             {node.children.map((child) => renderNode(child, depth + 1))}
         </Fragment>
     );
@@ -55,7 +61,7 @@ export default function Organizer({ commitments }: OrganizerProps) {
             </div>
             {roots.map((root) => renderNode(root, 0))}
             {childlessRoots.map((node) => (
-                <CommitmentRow key={node.commitment.file.path} commitment={node.commitment} depth={0} error={node.error} />
+                <CommitmentRow key={node.commitment.file.path} commitment={node.commitment} depth={0} error={node.error} effective={node.effective} />
             ))}
         </div>
     </div>);

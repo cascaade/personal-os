@@ -2,14 +2,17 @@ import { useContext, useRef, useState } from "react";
 import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import { ObsidianContext } from "@/context/ObsidianContext";
+import { EffectiveFields } from "@/utils/commitmentTree";
 
 interface CommitmentRowProps {
     commitment: Commitment,
     depth?: number,
-    error?: boolean
+    error?: boolean,
+    isProject?: boolean,
+    effective: EffectiveFields,
 }
 
-export function CommitmentRow({ commitment, depth, error }: CommitmentRowProps) {
+export function CommitmentRow({ commitment, depth, error, isProject, effective }: CommitmentRowProps) {
     const { ctx, leaf } = useContext(ObsidianContext)!;
 
     const [ editing, setEditing ] = useState(false);
@@ -41,8 +44,12 @@ export function CommitmentRow({ commitment, depth, error }: CommitmentRowProps) 
         setEditing(false);
     };
 
+    const progressPct = effective.progress.total > 0
+        ? Math.round((effective.progress.done / effective.progress.total) * 100)
+        : 0;
+
     return (
-        <div className="row">
+        <div className={ `row${ error ? " error" : "" }` }>
             <div
                 className="cell title-cell"
                 onClick={ (e) => {
@@ -108,17 +115,23 @@ export function CommitmentRow({ commitment, depth, error }: CommitmentRowProps) 
             </div>
 
             <div className="cell">
-                <select value={ commitment.status }>
-                    <option value="not-started">not started</option>
-                    <option value="blocked">blocked</option>
-                    <option value="in-progress">in progress</option>
-                    <option value="suspended">suspended</option>
-                    <option value="done">done</option>
-                </select>
+                { isProject ? (
+                    <div className="project-progress-bar">
+                        <div className="project-progress-fill" style={ { width: progressPct + "%" } }></div>
+                    </div>
+                ) : (
+                    <select value={ commitment.status }>
+                        <option value="not-started">not started</option>
+                        <option value="blocked">blocked</option>
+                        <option value="in-progress">in progress</option>
+                        <option value="suspended">suspended</option>
+                        <option value="done">done</option>
+                    </select>
+                ) }
             </div>
 
             <div className="cell">
-                <select value={ commitment.priority }>
+                <select value={ effective.priority }>
                     <option value="lowest">lowest</option>
                     <option value="low">low</option>
                     <option value="medium">medium</option>
@@ -131,8 +144,8 @@ export function CommitmentRow({ commitment, depth, error }: CommitmentRowProps) 
                 <input
                     type="datetime-local"
                     value={
-                        commitment.due &&
-                        toLocalISOString(commitment.due)
+                        effective.due &&
+                        toLocalISOString(effective.due)
                     }
                 />
             </div>
@@ -141,20 +154,22 @@ export function CommitmentRow({ commitment, depth, error }: CommitmentRowProps) 
                 <input
                     type="datetime-local"
                     value={
-                        commitment.start &&
-                        toLocalISOString(commitment.start)
+                        effective.start &&
+                        toLocalISOString(effective.start)
                     }
                 />
             </div>
 
             <div className="cell">
-                <span
-                    className="custom-inner-input"
-                    contentEditable
-                    suppressContentEditableWarning
-                >
-                    { commitment.recurrences }
-                </span>
+                { !isProject && (
+                    <span
+                        className="custom-inner-input"
+                        contentEditable
+                        suppressContentEditableWarning
+                    >
+                        { commitment.recurrences }
+                    </span>
+                ) }
             </div>
         </div>
     );

@@ -1,10 +1,23 @@
 // src/utils/commitmentTree.ts
 import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 
+export interface ProgressInfo {
+    done: number;
+    total: number;
+}
+
+export interface EffectiveFields {
+    progress: ProgressInfo;      // rolled up from all descendant tasks; for a leaf, itself counts as 1
+    priority?: string;           // own value if set, else inferred
+    start?: Date;                // own value if set, else inferred
+    due?: Date;                  // own value if set, else inferred
+}
+
 export interface CommitmentTreeNode {
     commitment: Commitment;
     children: CommitmentTreeNode[];
     error: boolean;
+    effective: EffectiveFields;
 }
 
 export interface CommitmentTree {
@@ -17,13 +30,18 @@ export interface ProjectResolver {
 }
 
 const RELEVANT_ROLES = new Set(["task", "project"]);
+const PRIORITY_ORDER = ["lowest", "low", "medium", "high", "highest"];
+
+function priorityRank(p?: string): number {
+    return p ? PRIORITY_ORDER.indexOf(p) : -1;
+}
+
+const EMPTY_EFFECTIVE: EffectiveFields = { progress: { done: 0, total: 0 } };
 
 export function buildCommitmentTree(
     commitments: readonly Commitment[],
     resolver: ProjectResolver
 ): CommitmentTree {
-    // Drop anything that isn't a task or project up front — this is what keeps
-    // chains short and stops calendar entries from ever entering the tree.
     const relevant = commitments.filter((c) => RELEVANT_ROLES.has(c.role ?? ""));
     const relevantByPath = new Map(relevant.map((c) => [c.file.path, c]));
 
@@ -34,13 +52,12 @@ export function buildCommitmentTree(
     const getNode = (c: Commitment): CommitmentTreeNode => {
         let node = nodeByPath.get(c.file.path);
         if (!node) {
-            node = { commitment: c, children: [], error: false };
+            node = { commitment: c, children: [], error: false, effective: EMPTY_EFFECTIVE };
             nodeByPath.set(c.file.path, node);
         }
         return node;
     };
 
-    // Single resolver call per commitment (previously this was called twice).
     const getParent = (c: Commitment): Commitment | undefined => {
         if (!c.projectPath) return undefined;
         const resolved = resolver.getProject(c);
@@ -53,17 +70,16 @@ export function buildCommitmentTree(
     for (const start of relevant) {
         if (state.get(start.file.path) === "done") continue;
 
-        // `chain` stands in for the call stack in the old recursive version.
         const chain: Commitment[] = [];
         const chainSet = new Set<string>();
         let cur: Commitment | undefined = start;
         let terminal: CommitmentTreeNode;
 
         while (true) {
-            const path = cur.file.path;
+            const path = cur!.file.path;
 
             if (state.get(path) === "done") {
-                terminal = getNode(cur);
+                terminal = getNode(cur!);
                 break;
             }
 
@@ -77,8 +93,6 @@ export function buildCommitmentTree(
                     chain.pop();
                     terminal = looperNode;
                 } else {
-                    // chain is empty — cur itself is the looper (cycle of length 1,
-                    // i.e. a project referencing itself as its own project).
                     const node = getNode(cur);
                     node.error = true;
                     state.set(node.commitment.file.path, "done");
@@ -88,12 +102,12 @@ export function buildCommitmentTree(
                 break;
             }
 
-            chain.push(cur);
+            chain.push(cur!);
             chainSet.add(path);
 
             const parent = getParent(cur);
             if (!parent) {
-                const node = getNode(cur);
+                const node = getNode(cur!);
                 state.set(path, "done");
                 allRoots.push(node);
                 chain.pop();
@@ -115,6 +129,11 @@ export function buildCommitmentTree(
         }
     }
 
+    // Bottom-up pass: fills in `effective` for every node, project rollups
+    // included. Iterative post-order — same reason as the climb above, a
+    // deep tree shouldn't be able to blow the call stack.
+    attachEffectiveFields(allRoots);
+
     const roots: CommitmentTreeNode[] = [];
     const childlessRoots: CommitmentTreeNode[] = [];
     for (const node of allRoots) {
@@ -124,24 +143,92 @@ export function buildCommitmentTree(
     return { roots, childlessRoots };
 }
 
-function compareByDue(a: Commitment, b: Commitment, newestFirst: boolean): number {
-    const aTime = a.due?.getTime();
-    const bTime = b.due?.getTime();
+function attachEffectiveFields(topNodes: CommitmentTreeNode[]) {
+    for (const top of topNodes) {
+        const stack: { node: CommitmentTreeNode; visited: boolean }[] = [{ node: top, visited: false }];
+
+        while (stack.length > 0) {
+            const frame = stack[stack.length - 1]!;
+
+            if (!frame.visited) {
+                frame.visited = true;
+                for (const child of frame.node.children) {
+                    stack.push({ node: child, visited: false });
+                }
+            } else {
+                stack.pop();
+                frame.node.effective = computeEffective(frame.node);
+            }
+        }
+    }
+}
+
+function computeEffective(node: CommitmentTreeNode): EffectiveFields {
+    const c = node.commitment;
+
+    // Leaf (a task, or a project with no children): nothing to roll up from,
+    // so "effective" is just its own fields. Its own completion counts as
+    // one unit toward whatever parent aggregates it.
+    if (node.children.length === 0) {
+        return {
+            progress: { done: c.status === "done" ? 1 : 0, total: 1 },
+            priority: c.priority,
+            start: c.start,
+            due: c.due,
+        };
+    }
+
+    let doneSum = 0;
+    let totalSum = 0;
+    let earliestStart: Date | undefined;
+    let latestDue: Date | undefined;
+    let bestPriorityRank = -1;
+    let bestPriority: string | undefined;
+
+    for (const child of node.children) {
+        const eff = child.effective;
+
+        doneSum += eff.progress.done;
+        totalSum += eff.progress.total;
+
+        if (eff.start && (!earliestStart || eff.start.getTime() < earliestStart.getTime())) {
+            earliestStart = eff.start;
+        }
+        if (eff.due && (!latestDue || eff.due.getTime() > latestDue.getTime())) {
+            latestDue = eff.due;
+        }
+
+        const rank = priorityRank(eff.priority);
+        if (rank > bestPriorityRank) {
+            bestPriorityRank = rank;
+            bestPriority = eff.priority;
+        }
+    }
+
+    return {
+        progress: { done: doneSum, total: totalSum },
+        priority: c.priority ?? bestPriority, // own value wins — that's the override
+        start: c.start ?? earliestStart,
+        due: c.due ?? latestDue,
+    };
+}
+
+function compareByEffectiveDue(a: CommitmentTreeNode, b: CommitmentTreeNode, newestFirst: boolean): number {
+    const aTime = a.effective.due?.getTime();
+    const bTime = b.effective.due?.getTime();
     if (aTime == null && bTime == null) return 0;
     if (aTime == null) return 1;
     if (bTime == null) return -1;
     return newestFirst ? bTime - aTime : aTime - bTime;
 }
 
-// Also iterative now, for the same reason — a very deep tree shouldn't be
-// able to blow the stack just by sorting it.
 export function sortTree(roots: CommitmentTreeNode[], newestFirst: boolean): CommitmentTreeNode[] {
-    const sortedRoots = [...roots].sort((a, b) => compareByDue(a.commitment, b.commitment, newestFirst));
+    const sortedRoots = [...roots].sort((a, b) => compareByEffectiveDue(a, b, newestFirst));
 
     const stack: CommitmentTreeNode[] = [...sortedRoots];
     while (stack.length > 0) {
         const node = stack.pop()!;
-        node.children.sort((a, b) => compareByDue(a.commitment, b.commitment, newestFirst));
+        node.children.sort((a, b) => compareByEffectiveDue(a, b, newestFirst));
         for (const child of node.children) stack.push(child);
     }
 
