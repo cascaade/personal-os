@@ -311,8 +311,8 @@ h2 {
 
 .table {
     display: grid;
-    grid-template-columns: 2.4fr .5fr .5fr .5fr .5fr 1.8fr;
-    padding: 0 var(--size-4-8);
+    grid-template-columns: 2.4fr 0fr 0fr 0fr 0fr 1.6fr;
+    padding: 0 var(--size-4-8) 0 var(--size-4-16);
     max-width: 100%;
     overflow-x: auto;
 
@@ -338,11 +338,12 @@ h2 {
 
     .header,
     .row {
+        --background-color: var(--color-base-00);
         display: contents;
     }
 
-    .row:hover .cell {
-        background-color: var(--color-base-05);
+    .row:hover {
+        --background-color: var(--color-base-05);
     }
 
     .cell {
@@ -350,6 +351,11 @@ h2 {
         border-bottom: 1px solid var(--color-base-20);
         border-right: 1px solid var(--color-base-20);
         min-width: fit-content;
+        background-color: var(--background-color);
+
+        --m-right: var(--size-4-8);
+
+        position: relative;
 
         display: flex;
         align-items: center;
@@ -360,21 +366,37 @@ h2 {
             max-width: 100%;
             white-space: nowrap;
             overflow: hidden;
-            margin-right: var(--size-4-8);
+            margin-right: var(--m-right);
             cursor: initial;
         }
 
         &:nth-child(6) {
             border-right: none;
+            min-width: 300px;
         }
 
-        &:nth-child(6n + 1) {
+        &.title-cell {
             min-width: 500px;
 
             cursor: pointer;
 
             a {
                 cursor: text;
+            }
+
+            &::after {
+                content: "";
+                position: absolute;
+                right: var(--m-right);
+                top: 0;
+                bottom: 0;
+                width: 4rem;
+                background: linear-gradient(
+                        to right,
+                        transparent,
+                        var(--background-color)
+                );
+                pointer-events: none;
             }
         }
 
