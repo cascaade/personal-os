@@ -4,14 +4,16 @@ import { toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import { ObsidianContext } from "@/context/ObsidianContext";
 
 interface CommitmentRowProps {
-    commitment: Commitment;
+    commitment: Commitment,
+    depth?: number,
+    error?: boolean
 }
 
-export function CommitmentRow({ commitment }: CommitmentRowProps) {
+export function CommitmentRow({ commitment, depth, error }: CommitmentRowProps) {
     const { ctx, leaf } = useContext(ObsidianContext)!;
 
-    const [editing, setEditing] = useState(false);
-    const [editValue, setEditValue] = useState(commitment.title);
+    const [ editing, setEditing ] = useState(false);
+    const [ editValue, setEditValue ] = useState(commitment.title);
     const cancelled = useRef(false);
 
     const startEditing = () => {
@@ -43,23 +45,20 @@ export function CommitmentRow({ commitment }: CommitmentRowProps) {
         <div className="row">
             <div
                 className="cell title-cell"
-                onDoubleClick={startEditing}
                 onClick={ (e) => {
-                    if (e.target === e.currentTarget && !editing) {
-                        startEditing();
-                        return;
+                    if (!editing) {
+                        void ctx.obsidian.openInRightPane(commitment.file, leaf);
                     }
-
-                    e.preventDefault();
-                    void ctx.obsidian.openInRightPane(commitment.file, leaf);
                 } }
             >
-                {editing ? (
+                <pre className="tab-indent">{ "\t".repeat(depth ?? 0) }</pre>
+
+                { editing ? (
                     <span
                         className="custom-inner-input"
                         contentEditable
                         suppressContentEditableWarning
-                        ref={(el) => {
+                        ref={ (el) => {
                             if (el) {
                                 el.focus();
 
@@ -70,11 +69,11 @@ export function CommitmentRow({ commitment }: CommitmentRowProps) {
                                 selection?.removeAllRanges();
                                 selection?.addRange(range);
                             }
-                        }}
-                        onInput={(e) => {
+                        } }
+                        onInput={ (e) => {
                             setEditValue(e.currentTarget.textContent ?? "");
-                        }}
-                        onKeyDown={(e) => {
+                        } }
+                        onKeyDown={ (e) => {
                             if (e.key === "Enter") {
                                 e.preventDefault();
                                 finishEditing();
@@ -82,29 +81,34 @@ export function CommitmentRow({ commitment }: CommitmentRowProps) {
                                 e.preventDefault();
                                 cancelEditing();
                             }
-                        }}
-                        onBlur={finishEditing}
+                        } }
+                        onBlur={ finishEditing }
                     >
-                        {editValue}
+                        { editValue }
                     </span>
                 ) : (
                     <a
-                        href={commitment.file.path}
+                        href={ commitment.file.path }
                         className="custom-inner-input"
-                        onClick={(e) => {
+                        onClick={ (e) => {
                             e.preventDefault();
-
-                            // Open commitment in side pane
-                            // openCommitment(commitment);
+                            e.stopPropagation();
+                            startEditing();
+                        } }
+                        onContextMenu={(e) => {
+                            if (e.ctrlKey) {
+                                void ctx.obsidian.openInRightPane(commitment.file, leaf);
+                                return;
+                            }
                         }}
                     >
-                        {commitment.title}
+                        { commitment.title }
                     </a>
-                )}
+                ) }
             </div>
 
             <div className="cell">
-                <select value={commitment.status}>
+                <select value={ commitment.status }>
                     <option value="not-started">not started</option>
                     <option value="blocked">blocked</option>
                     <option value="in-progress">in progress</option>
@@ -114,7 +118,7 @@ export function CommitmentRow({ commitment }: CommitmentRowProps) {
             </div>
 
             <div className="cell">
-                <select value={commitment.priority}>
+                <select value={ commitment.priority }>
                     <option value="lowest">lowest</option>
                     <option value="low">low</option>
                     <option value="medium">medium</option>
@@ -149,7 +153,7 @@ export function CommitmentRow({ commitment }: CommitmentRowProps) {
                     contentEditable
                     suppressContentEditableWarning
                 >
-                    {commitment.recurrences}
+                    { commitment.recurrences }
                 </span>
             </div>
         </div>
