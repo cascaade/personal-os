@@ -1,5 +1,5 @@
 import { useContext, useRef, useState } from "react";
-import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
+import { Commitment, CommitmentFrontmatter } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import { ObsidianContext } from "@/context/ObsidianContext";
 import { EffectiveFields } from "@/utils/commitmentTree";
@@ -55,10 +55,8 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
         overdue && "overdue",
     ].filter(Boolean).join(" ");
 
-    // ⚠️ Cast is a stand-in — swap CommitmentFrontmatter for the real import
-    // if it isn't a Partial<...> already, otherwise this cast is unsound.
-    const updateFrontmatter = (patch: Record<string, unknown>) => {
-        void ctx.commitments.modifyCommitmentFrontmatter(commitment.file, patch as any);
+    const updateFrontmatter = (patch: CommitmentFrontmatter) => {
+        void ctx.commitments.modifyCommitmentFrontmatter(commitment.file, patch);
     };
 
     return (
@@ -67,6 +65,8 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                 className="cell title-cell"
                 onClick={ (e) => {
                     if (!editing) {
+                        e.preventDefault();
+                        e.stopPropagation();
                         void ctx.obsidian.openInRightPane(commitment.file, leaf);
                     }
                 } }
@@ -78,22 +78,24 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                         className="custom-inner-input"
                         contentEditable
                         suppressContentEditableWarning
-                        ref={ (el) => {
+                        ref={(el) => {
                             if (el) {
+                                el.textContent = editValue;
                                 el.focus();
 
                                 const range = document.createRange();
                                 range.selectNodeContents(el);
+                                range.collapse(false);
 
                                 const selection = window.getSelection();
                                 selection?.removeAllRanges();
                                 selection?.addRange(range);
                             }
-                        } }
-                        onInput={ (e) => {
+                        }}
+                        onInput={(e) => {
                             setEditValue(e.currentTarget.textContent ?? "");
-                        } }
-                        onKeyDown={ (e) => {
+                        }}
+                        onKeyDown={(e) => {
                             if (e.key === "Enter") {
                                 e.preventDefault();
                                 finishEditing();
@@ -101,11 +103,9 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                                 e.preventDefault();
                                 cancelEditing();
                             }
-                        } }
-                        onBlur={ finishEditing }
-                    >
-                        { editValue }
-                    </span>
+                        }}
+                        onBlur={finishEditing}
+                    />
                 ) : (
                     <a
                         href={ commitment.file.path }
@@ -117,6 +117,8 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                         } }
                         onContextMenu={(e) => {
                             if (e.ctrlKey) {
+                                e.preventDefault();
+                                e.stopPropagation();
                                 void ctx.obsidian.openInRightPane(commitment.file, leaf);
                                 return;
                             }

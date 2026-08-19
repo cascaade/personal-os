@@ -3,7 +3,7 @@ import { formatDate, getDayGap, parseLocalDate, toLocalISOString } from "@person
 import PersonalOSContext from "./PersonalOSContext";
 import { ConfirmModal } from "../components/ConfirmModal";
 
-type CommitmentFrontmatter = {
+export type CommitmentFrontmatter = {
     type?: string;
     role?: string;
 

@@ -408,23 +408,26 @@ h2 {
             max-width: 100%;
             white-space: nowrap;
             overflow: hidden;
-            margin-right: var(--m-right);
-            cursor: initial;
+            padding-right: var(--m-right);
+            cursor: text;
+            flex-grow: 1;
+            line-height: calc(var(--content-default-height) + 2 * var(--size-4-2));
         }
 
+        /* last column: recurrences */
         &:nth-child(6) {
             border-right: none;
-            min-width: 300px;
+            min-width: 150px;
+            padding: 0 0 0 var(--size-4-3);
+            align-items: stretch;
         }
 
         &.title-cell {
-            min-width: 500px;
+            /*width: 500px;*/
+            padding: 0 0 0 var(--size-4-3);
+            align-items: stretch;
 
             cursor: pointer;
-
-            a {
-                cursor: text;
-            }
 
             &::after {
                 content: "";

@@ -54,20 +54,22 @@ export function buildCommitmentTree(
 
     const getNode = (c: Commitment): CommitmentTreeNode => {
         let node = nodeByPath.get(c.file.path);
+
         if (!node) {
             node = { commitment: c, children: [], error: false, overdue: false, effective: EMPTY_EFFECTIVE };
             nodeByPath.set(c.file.path, node);
         }
+
         return node;
     };
 
     const getParent = (c: Commitment): Commitment | undefined => {
         if (!c.projectPath) return undefined;
+
         const resolved = resolver.getProject(c);
         if (!resolved) return undefined;
-        const parent = relevantByPath.get(resolved.file.path);
-        if (!parent || parent.role === "task") return undefined;
-        return parent;
+
+        return resolved;
     };
 
     for (const start of relevant) {
