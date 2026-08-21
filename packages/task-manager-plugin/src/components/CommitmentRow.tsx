@@ -1,8 +1,9 @@
-import { useContext, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Commitment, CommitmentFrontmatter } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { formatDate, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import { ObsidianContext } from "@/context/ObsidianContext";
 import { EffectiveFields } from "@/utils/commitment-tree";
+import { setTooltip } from "obsidian";
 
 interface CommitmentRowProps {
     commitment: Commitment,
@@ -45,8 +46,23 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
         setEditing(false);
     };
 
-    const progressPct = effective.progress.total > 0
-        ? Math.round((effective.progress.done / effective.progress.total) * 100)
+    const tagRef = useRef<HTMLDivElement>(null);
+
+    const total = effective.progress.total;
+    const done = effective.progress.done;
+
+    useEffect(() => {
+        if (!tagRef.current) return;
+
+        setTooltip(tagRef.current, total === 0 ? "No tasks yet" : `${ done } / ${ total } tasks done`, {
+            placement: "top",
+            delay: 200,
+            gap: -8,
+        });
+    }, [ total, done ]);
+
+    const progressPct = total > 0
+        ? Math.round((done / total) * 100)
         : 0;
 
     const rowClassName = [
@@ -144,7 +160,7 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                 ) }
             </div>
 
-            <div className="cell">
+            <div className="cell" ref={isProject ? tagRef : undefined}>
                 { isProject ? (
                     <div className="project-progress-bar">
                         <div className="project-progress-fill" style={ { width: progressPct + "%" } }></div>

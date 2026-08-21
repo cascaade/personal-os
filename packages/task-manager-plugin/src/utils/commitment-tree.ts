@@ -180,8 +180,13 @@ function attachEffectiveFields(topNodes: CommitmentTreeNode[]) {
                     stack.push({ node: child, visited: false });
                 }
             } else {
+                console.log("computing " + frame.node.commitment.file.path);
+
                 stack.pop();
                 const eff = computeEffective(frame.node);
+
+                console.log(eff);
+
                 frame.node.effective = eff;
                 frame.node.overdue =
                     eff.due != null &&
@@ -196,8 +201,10 @@ function computeEffective(node: CommitmentTreeNode): EffectiveFields {
     const c = node.commitment;
 
     if (node.children.length === 0) {
+        const isDone = c.status === "done";
+
         return {
-            progress: { done: c.status === "done" ? 1 : 0, total: 1 },
+            progress: { done: isDone ? 1 : 0, total: c.role === "project" ? (isDone ? 1 : 0) : 1 },
             priority: c.priority,
             start: c.start,
             due: c.due,
@@ -213,8 +220,12 @@ function computeEffective(node: CommitmentTreeNode): EffectiveFields {
     let bestPriority: string | undefined;
     let anyInProgress = false;
 
+    console.warn(node.commitment.file.path);
+
     for (const child of node.children) {
         const eff = child.effective;
+
+        console.log(child.commitment.file.path, eff.progress.total);
 
         doneSum += eff.progress.done;
         totalSum += eff.progress.total;
