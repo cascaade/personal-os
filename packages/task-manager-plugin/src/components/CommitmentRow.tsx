@@ -2,7 +2,7 @@ import { useContext, useRef, useState } from "react";
 import { Commitment, CommitmentFrontmatter } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { formatDate, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import { ObsidianContext } from "@/context/ObsidianContext";
-import { EffectiveFields } from "@/utils/commitmentTree";
+import { EffectiveFields } from "@/utils/commitment-tree";
 
 interface CommitmentRowProps {
     commitment: Commitment,
@@ -70,6 +70,13 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                         void ctx.obsidian.openInRightPane(commitment.file, leaf);
                     }
                 } }
+                onContextMenu={ (e) => {
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void ctx.obsidian.openInRightPane(commitment.file, leaf);
+                    }
+                } }
             >
                 <pre className="tab-indent">{ "\t".repeat(depth ?? 0) }</pre>
 
@@ -102,6 +109,14 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                             } else if (e.key === "Escape") {
                                 e.preventDefault();
                                 cancelEditing();
+                            }
+                        }}
+                        onContextMenu={(e) => {
+                            if (e.ctrlKey) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                void ctx.obsidian.openInRightPane(commitment.file, leaf);
+                                return;
                             }
                         }}
                         onBlur={finishEditing}

@@ -3,7 +3,7 @@ import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvi
 import { Fragment, useContext, useMemo, useState } from "react";
 import { ObsidianContext } from "@/context/ObsidianContext";
 import { CommitmentRow } from "@/components/CommitmentRow";
-import { buildCommitmentTree, CommitmentTreeNode, filterTreeForView, sortTree } from "@/utils/commitmentTree";
+import { buildCommitmentTree, CommitmentTreeNode, filterTreeForView, sortTree } from "@/utils/commitment-tree";
 
 type ViewMode = "upcoming" | "past";
 
