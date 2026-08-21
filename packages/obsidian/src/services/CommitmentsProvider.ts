@@ -582,6 +582,10 @@ export class CommitmentsProvider {
         });
     }
 
+    public async changeCommitmentTitle(commitment: Commitment, newTitle: string) {
+
+    }
+
     subscribe(key: string, listener: () => void) {
         let listeners = this.listenersByDay.get(key);
 

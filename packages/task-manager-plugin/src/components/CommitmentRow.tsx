@@ -1,6 +1,6 @@
 import { useContext, useRef, useState } from "react";
 import { Commitment, CommitmentFrontmatter } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
-import { toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
+import { formatDate, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
 import { ObsidianContext } from "@/context/ObsidianContext";
 import { EffectiveFields } from "@/utils/commitmentTree";
 
@@ -35,7 +35,7 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
         setEditing(false);
 
         if (editValue !== commitment.title) {
-            // Save editValue here
+            void ctx.commitments.changeCommitmentTitle(commitment, editValue);
         }
     };
 
@@ -163,25 +163,27 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
 
             <div className="cell">
                 <input
-                    type="datetime-local"
-                    value={
+                    type="date"
+                    defaultValue={
                         effective.due &&
-                        toLocalISOString(effective.due)
+                        formatDate(effective.due)
                     }
+                    onChange={ (e) => updateFrontmatter({ due: e.target.value }) }
                 />
             </div>
 
             <div className="cell">
                 <input
-                    type="datetime-local"
-                    value={
+                    type="date"
+                    defaultValue={
                         effective.start &&
-                        toLocalISOString(effective.start)
+                        formatDate(effective.start)
                     }
+                    onChange={ (e) => updateFrontmatter({ start: e.target.value }) }
                 />
             </div>
 
-            <div className="cell">
+            <div className="cell recurrences-cell">
                 { !isProject && (
                     <span
                         className="custom-inner-input"

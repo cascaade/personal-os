@@ -72,12 +72,12 @@ export function buildCommitmentTree(
         return resolved;
     };
 
-    for (const start of relevant) {
-        if (state.get(start.file.path) === "done") continue;
+    for (const ep of relevant) {
+        if (state.get(ep.file.path) === "done") continue;
 
         const chain: Commitment[] = [];
         const chainSet = new Set<string>();
-        let cur: Commitment | undefined = start;
+        let cur: Commitment | undefined = ep;
         let terminal: CommitmentTreeNode;
 
         while (true) {
@@ -88,24 +88,40 @@ export function buildCommitmentTree(
                 break;
             }
 
+            // if loops (parent is already a descendant)
             if (chainSet.has(path)) {
-                const looper = chain[chain.length - 1];
-                if (looper) {
-                    const looperNode = getNode(looper);
-                    looperNode.error = true;
-                    state.set(looper.file.path, "done");
-                    allRoots.push(looperNode);
-                    chain.pop();
-                    terminal = looperNode;
-                } else {
-                    const node = getNode(cur);
-                    node.error = true;
-                    state.set(node.commitment.file.path, "done");
-                    allRoots.push(node);
-                    terminal = node;
-                }
+                const looper = chain.at(-1);
+                if (!looper) throw new Error("Loop detected with empty chain");
+
+                const looperNode = getNode(looper);
+
+                looperNode.error = true;
+                state.set(looper.file.path, "done");
+                allRoots.push(looperNode);
+                chain.pop();
+                terminal = looperNode;
                 break;
             }
+            // if (chainSet.has(path)) {
+            //     const looper = chain[chain.length - 1];
+            //     if (looper) {
+            //         const looperNode = getNode(looper);
+            //         looperNode.error = true;
+            //         state.set(looper.file.path, "done");
+            //         allRoots.push(looperNode);
+            //         chain.pop();
+            //         terminal = looperNode;
+            //     } else {
+            //         console.warn("Error caught: no `looper`");
+            //
+            //         const node = getNode(cur);
+            //         node.error = true;
+            //         state.set(node.commitment.file.path, "done");
+            //         allRoots.push(node);
+            //         terminal = node;
+            //     }
+            //     break;
+            // }
 
             chain.push(cur);
             chainSet.add(path);
@@ -249,7 +265,7 @@ export function sortTree(roots: CommitmentTreeNode[], newestFirst: boolean): Com
     while (stack.length > 0) {
         const node = stack.pop()!;
         node.children.sort((a, b) => compareByEffectiveDue(a, b, newestFirst));
-        for (const child of node.children) stack.push(child);
+        for (const child of node.children) stack.push(child); // add children to stack so that their children get sorted; recursion without recursion lol
     }
 
     return sortedRoots;
@@ -266,6 +282,8 @@ export function filterTreeForView(
     const now = Date.now();
 
     const matches = (node: CommitmentTreeNode): boolean => {
+        if (node.commitment.role === "project") return false;
+
         const due = node.effective.due?.getTime();
         if (viewMode === "upcoming") {
             return due == null || due >= now || node.overdue;
@@ -273,16 +291,44 @@ export function filterTreeForView(
         return due != null && due < now && !node.overdue;
     };
 
-    const filterList = (list: CommitmentTreeNode[]): CommitmentTreeNode[] => {
-        const result: CommitmentTreeNode[] = [];
-        for (const node of list) {
-            const filteredChildren = filterList(node.children);
-            if (matches(node) || filteredChildren.length > 0) {
-                result.push({ ...node, children: filteredChildren });
-            }
-        }
-        return result;
-    };
+    //~~ filter list ~~//
 
-    return filterList(nodes);
+    type StackItem = { node: CommitmentTreeNode; parentId: number };
+    const ROOT = -1;
+
+    // 1. Iterative traversal, assigning each node a numeric id.
+    //    Push children in reverse so they pop in original order.
+    const stack: StackItem[] = [];
+    for (let i = nodes.length - 1; i >= 0; i--) {
+        stack.push({ node: nodes[i]!, parentId: ROOT });
+    }
+
+    const order: { node: CommitmentTreeNode; id: number; parentId: number }[] = [];
+    let nextId = 0;
+
+    while (stack.length > 0) {
+        const { node, parentId } = stack.pop()!;
+        const id = nextId++;
+        order.push({ node, id, parentId });
+        for (let i = node.children.length - 1; i >= 0; i--) {
+            stack.push({ node: node.children[i]!, parentId: id });
+        }
+    }
+
+    // 2. Walk backwards so every child is handled before its parent.
+    const childrenById = new Map<number, CommitmentTreeNode[]>();
+
+    for (let i = order.length - 1; i >= 0; i--) {
+        const { node, id, parentId } = order[i]!;
+        const filteredChildren = (childrenById.get(id) ?? []).reverse();
+
+        if (matches(node) || filteredChildren.length > 0) {
+            const filteredNode: CommitmentTreeNode = { ...node, children: filteredChildren };
+            const siblings = childrenById.get(parentId) ?? [];
+            siblings.push(filteredNode);
+            childrenById.set(parentId, siblings);
+        }
+    }
+
+    return (childrenById.get(ROOT) ?? []).reverse();
 }

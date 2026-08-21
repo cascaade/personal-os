@@ -283,8 +283,6 @@ h2 {
 }
 
 .project-progress-bar {
-    flex-grow: 0;
-    flex-shrink: 0;
     height: 8px;
     align-self: center;
     background: var(--color-base-35);
@@ -331,9 +329,11 @@ h2 {
 
         box-sizing: content-box;
 
-        &:hover {
-            background-color: var(--background-secondary);
-        }
+        padding-right: var(--size-4-4);
+
+        /*&:hover {*/
+        /*    background-color: var(--background-secondary);*/
+        /*}*/
     }
 
     .header,
@@ -341,6 +341,27 @@ h2 {
         --background-color: var(--color-base-00);
         display: contents;
     }
+
+    /*.row.overdue {*/
+    /*    .cell {*/
+    /*        border-top: 1px solid var(--color-orange);*/
+    /*        border-bottom: 1px solid var(--color-orange);*/
+
+    /*        &:first-of-type {*/
+    /*            border-left: 1px solid var(--color-orange);*/
+    /*        }*/
+
+    /*        &:last-of-type {*/
+    /*            border-right: 1px solid var(--color-orange);*/
+    /*        }*/
+    /*    }*/
+    /*}*/
+
+    /*.row.overdue ~ .row.overdue {*/
+    /*    .cell {*/
+    /*        border-top: none;*/
+    /*    }*/
+    /*}*/
 
     .row.error {
         .cell {
@@ -358,27 +379,6 @@ h2 {
     }
 
     .row.error ~ .row.error {
-        .cell {
-            border-top: none;
-        }
-    }
-
-    .row.overdue {
-        .cell {
-            border-top: 1px solid var(--color-orange);
-            border-bottom: 1px solid var(--color-orange);
-
-            &:first-of-type {
-                border-left: 1px solid var(--color-orange);
-            }
-
-            &:last-of-type {
-                border-right: 1px solid var(--color-orange);
-            }
-        }
-    }
-
-    .row.overdue ~ .row.overdue {
         .cell {
             border-top: none;
         }
@@ -405,17 +405,20 @@ h2 {
         .custom-inner-input {
             display: block;
             min-width: 0;
-            max-width: 100%;
+            width: 500px;
             white-space: nowrap;
             overflow: hidden;
-            padding-right: var(--m-right);
+            border-right: var(--m-right) solid transparent;
             cursor: text;
             flex-grow: 1;
             line-height: calc(var(--content-default-height) + 2 * var(--size-4-2));
         }
 
-        /* last column: recurrences */
         &:nth-child(6) {
+            border-right: none;
+        }
+
+        &.recurrences-cell {
             border-right: none;
             min-width: 150px;
             padding: 0 0 0 var(--size-4-3);
@@ -423,8 +426,7 @@ h2 {
         }
 
         &.title-cell {
-            /*width: 500px;*/
-            padding: 0 0 0 var(--size-4-3);
+            padding: 0 0 0 var(--size-4-4);
             align-items: stretch;
 
             cursor: pointer;
@@ -435,7 +437,7 @@ h2 {
                 right: var(--m-right);
                 top: 0;
                 bottom: 0;
-                width: 4rem;
+                width: 2rem;
                 background: linear-gradient(
                         to right,
                         transparent,
@@ -445,7 +447,7 @@ h2 {
             }
         }
 
-        input[type="datetime-local"] {
+        input[type="date"], input[type="datetime-local"] {
             height: var(--content-default-height);
         }
 
