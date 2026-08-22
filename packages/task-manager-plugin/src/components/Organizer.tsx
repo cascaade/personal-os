@@ -14,6 +14,8 @@ import { Fragment, useContext, useMemo, useState } from "react";
 import { ObsidianContext } from "@/context/ObsidianContext";
 import { CommitmentRow } from "@/components/CommitmentRow";
 import { buildCommitmentTree, CommitmentTreeNode, filterTreeForView, sortTree } from "@/utils/commitment-tree";
+import { isLargeScreen } from "@personal-os/obsidian/dist/utils/screen";
+import { concat } from "@personal-os/core/dist/utils/classname-utils";
 
 type ViewMode = "upcoming" | "past" | "all";
 
@@ -52,7 +54,7 @@ export default function Organizer({ commitments }: OrganizerProps) {
         </Fragment>
     );
 
-    return (<div className="tm-organizer">
+    return (<div className={concat("tm-organizer", !isLargeScreen() && "platform-small") }>
         <div className="goals-table-header table-header">
             <h2>Goals ({goalRoots.length})</h2>
         </div>
@@ -85,10 +87,16 @@ export default function Organizer({ commitments }: OrganizerProps) {
             <div className="header-row">
                 <div className="cell"><FileText className="header-icon" /> Name</div>
                 <div className="cell"><CircleCheck className="header-icon" /> Status</div>
-                <div className="cell"><Flag className="header-icon" /> Priority</div>
+                {isLargeScreen() && (
+                    <div className="cell"><Flag className="header-icon" /> Priority</div>
+                )}
                 <div className="cell"><CalendarClock className="header-icon" /> Due</div>
-                <div className="cell"><CalendarPlus className="header-icon" /> Start</div>
-                <div className="cell"><Repeat className="header-icon" /> Recurrences</div>
+                {isLargeScreen() && (
+                    <div className="cell"><CalendarPlus className="header-icon" /> Start</div>
+                )}
+                {isLargeScreen() && (
+                    <div className="cell"><Repeat className="header-icon" /> Recurrences</div>
+                )}
             </div>
             {roots.map((root) => renderNode(root, 0, "commitment"))}
         </div>

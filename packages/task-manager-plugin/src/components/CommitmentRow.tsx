@@ -1,9 +1,11 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { Commitment, CommitmentFrontmatter } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
-import { formatDate, toLocalISOString } from "@personal-os/core/dist/utils/date-utils";
+import { formatDate } from "@personal-os/core/dist/utils/date-utils";
 import { ObsidianContext } from "@/context/ObsidianContext";
 import { EffectiveFields } from "@/utils/commitment-tree";
 import { setTooltip } from "obsidian";
+import { concat } from "@personal-os/core/dist/utils/classname-utils";
+import { isLargeScreen } from "@personal-os/obsidian/dist/utils/screen";
 
 interface CommitmentRowProps {
     commitment: Commitment,
@@ -198,18 +200,20 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                 </div>
             )}
 
-            <div className="cell">
-                <select
-                    value={ effective.priority }
-                    onChange={ (e) => updateFrontmatter({ priority: e.target.value }) }
-                >
-                    <option value="lowest">lowest</option>
-                    <option value="low">low</option>
-                    <option value="medium">medium</option>
-                    <option value="high">high</option>
-                    <option value="highest">highest</option>
-                </select>
-            </div>
+            {(isLargeScreen() || role === "goal") && (
+                <div className="cell">
+                    <select
+                        value={ effective.priority }
+                        onChange={ (e) => updateFrontmatter({ priority: e.target.value }) }
+                    >
+                        <option value="lowest">lowest</option>
+                        <option value="low">low</option>
+                        <option value="medium">medium</option>
+                        <option value="high">high</option>
+                        <option value="highest">highest</option>
+                    </select>
+                </div>
+            )}
 
             <div className="cell">
                 <input
@@ -222,7 +226,7 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                 />
             </div>
 
-            {role === "commitment" && (
+            {role === "commitment" && isLargeScreen() && (
                 <div className="cell">
                     <input
                         type="date"
@@ -235,7 +239,7 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                 </div>
             )}
 
-            {role === "commitment" && (
+            {role === "commitment" && isLargeScreen() && (
                 <div className="cell recurrences-cell">
                     { !isProject && (
                         <span

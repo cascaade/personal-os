@@ -454,6 +454,7 @@ h2 {
 
         input[type="date"], input[type="datetime-local"] {
             height: var(--content-default-height);
+            flex-grow: 1;
         }
 
         select {
@@ -472,7 +473,7 @@ h2 {
 }
 
 .goals-table {
-    grid-template-columns: 2.4fr 0fr 0fr;
+    grid-template-columns: 2.4fr 0.5fr 0.5fr;
     padding-bottom: var(--size-4-8);
 
     max-width: calc(var(--file-line-width) + var(--size-4-8) + var(--size-4-16));
@@ -485,7 +486,7 @@ h2 {
 }
 
 .commitments-table {
-    grid-template-columns: 2.4fr 0fr 0fr 0fr 0fr 1.6fr;
+    grid-template-columns: 2.4fr .5fr .5fr .5fr .5fr 1.6fr;
 
     .cell {
         &.recurrences-cell {
@@ -495,6 +496,10 @@ h2 {
             align-items: stretch;
         }
     }
+}
+
+.platform-small .commitments-table {
+    grid-template-columns: 2.4fr 1fr 1fr;
 }
 
 .table-header {
