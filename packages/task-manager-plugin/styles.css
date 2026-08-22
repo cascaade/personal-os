@@ -290,12 +290,22 @@ h2 {
     overflow: hidden;
     margin: 0 var(--size-4-1);
     width: calc(100% - var(--size-4-2));
+
+    position: relative;
 }
 
 .project-progress-fill {
     height: 100%;
     background: var(--cascaades-task-manager-accent);
     border-radius: var(--radius-m);
+
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    &.ip {
+        opacity: .2;
+    }
 }
 
 .project-progress-percent {

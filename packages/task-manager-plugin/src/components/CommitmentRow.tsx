@@ -50,17 +50,22 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
     const tagRef = useRef<HTMLDivElement>(null);
 
     const total = effective.progress.total;
+    const inProgress = effective.progress.inProgress;
     const done = effective.progress.done;
 
     useEffect(() => {
         if (!tagRef.current) return;
 
-        setTooltip(tagRef.current, total === 0 ? "No tasks yet" : `${ done } / ${ total } tasks done`, {
+        setTooltip(tagRef.current, total === 0 ? "No tasks yet" : `${ done } / ${ total } tasks done${inProgress > 0 ? `\n${ inProgress } in progress` : ''}`, {
             placement: "top",
             delay: 200,
             gap: -8,
         });
-    }, [ total, done ]);
+    }, [ total, done, inProgress ]);
+
+    const inProgressPct = total > 0
+        ? Math.round((inProgress / total) * 100)
+        : 0;
 
     const progressPct = total > 0
         ? Math.round((done / total) * 100)
@@ -176,6 +181,7 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                     { isProject ? (
                         <div className="project-progress-bar">
                             <div className="project-progress-fill" style={ { width: progressPct + "%" } }></div>
+                            <div className="project-progress-fill ip" style={ { width: progressPct + inProgressPct + "%" } }></div>
                         </div>
                     ) : (
                         <select

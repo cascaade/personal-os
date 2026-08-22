@@ -2,6 +2,7 @@
 import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 
 export interface ProgressInfo {
+    inProgress: number;
     done: number;
     total: number;
 }
@@ -34,7 +35,7 @@ function priorityRank(p?: string): number {
     return p ? PRIORITY_ORDER.indexOf(p) : -1;
 }
 
-const EMPTY_EFFECTIVE: EffectiveFields = { progress: { done: 0, total: 0 } };
+const EMPTY_EFFECTIVE: EffectiveFields = { progress: { inProgress: 0, done: 0, total: 0 } };
 
 export function buildCommitmentTree(
     commitments: readonly Commitment[],
@@ -192,9 +193,13 @@ function computeEffective(node: CommitmentTreeNode): EffectiveFields {
 
     if (node.children.length === 0) {
         const isDone = c.status === "done";
+        const total = c.status === "suspended" ? 0 :
+            c.role === "project"
+                ? (isDone ? 1 : 0)
+                : 1;
 
         return {
-            progress: { done: isDone ? 1 : 0, total: c.role === "project" ? (isDone ? 1 : 0) : 1 },
+            progress: { inProgress: c.status === "in-progress" ? 1 : 0, done: isDone ? 1 : 0, total: total },
             priority: c.priority,
             start: c.start,
             due: c.due,
@@ -202,13 +207,13 @@ function computeEffective(node: CommitmentTreeNode): EffectiveFields {
         };
     }
 
+    let inProgressSum = 0;
     let doneSum = 0;
     let totalSum = 0;
     let earliestStart: Date | undefined;
     let latestDue: Date | undefined;
     let bestPriorityRank = -1;
     let bestPriority: string | undefined;
-    let anyInProgress = false;
 
     console.warn(node.commitment.file.path);
 
@@ -217,6 +222,7 @@ function computeEffective(node: CommitmentTreeNode): EffectiveFields {
 
         console.log(child.commitment.file.path, eff.progress.total);
 
+        inProgressSum += eff.progress.inProgress;
         doneSum += eff.progress.done;
         totalSum += eff.progress.total;
 
@@ -232,17 +238,15 @@ function computeEffective(node: CommitmentTreeNode): EffectiveFields {
             bestPriorityRank = rank;
             bestPriority = eff.priority;
         }
-
-        if (eff.status === "in-progress") anyInProgress = true;
     }
 
     let inferredStatus: string;
     if (totalSum > 0 && doneSum === totalSum) inferredStatus = "done";
-    else if (doneSum > 0 || anyInProgress) inferredStatus = "in-progress";
+    else if (doneSum > 0 || inProgressSum > 0) inferredStatus = "in-progress";
     else inferredStatus = "not-started";
 
     return {
-        progress: { done: doneSum, total: totalSum },
+        progress: { inProgress: inProgressSum, done: doneSum, total: totalSum },
         priority: c.priority ?? bestPriority,
         start: c.start ?? earliestStart,
         due: c.due ?? latestDue,
