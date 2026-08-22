@@ -95,7 +95,11 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                     }
                 } }
             >
-                <pre className="tab-indent">{ "\t".repeat(depth ?? 0) }</pre>
+                <pre className="tab-indent">
+                  {Array.from({ length: depth ?? 0 }, (_, i) => (
+                      <span key={i}>{"\t"}</span>
+                  ))}
+                </pre>
 
                 { editing ? (
                     <span
@@ -163,6 +167,12 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
 
             {role === "commitment" && (
                 <div className="cell" ref={isProject ? tagRef : undefined}>
+                    <pre className="tab-indent">
+                      {Array.from({ length: depth ?? 0 }, (_, i) => (
+                          <span key={i}>{"\t"}</span>
+                      ))}
+                    </pre>
+
                     { isProject ? (
                         <div className="project-progress-bar">
                             <div className="project-progress-fill" style={ { width: progressPct + "%" } }></div>
