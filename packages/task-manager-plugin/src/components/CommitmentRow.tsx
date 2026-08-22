@@ -12,9 +12,10 @@ interface CommitmentRowProps {
     overdue?: boolean,
     isProject?: boolean,
     effective: EffectiveFields,
+    role: "goal" | "commitment",
 }
 
-export function CommitmentRow({ commitment, depth, error, overdue, isProject, effective }: CommitmentRowProps) {
+export function CommitmentRow({ commitment, depth, error, overdue, isProject, effective, role }: CommitmentRowProps) {
     const { ctx, leaf } = useContext(ObsidianContext)!;
 
     const [ editing, setEditing ] = useState(false);
@@ -160,24 +161,26 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                 ) }
             </div>
 
-            <div className="cell" ref={isProject ? tagRef : undefined}>
-                { isProject ? (
-                    <div className="project-progress-bar">
-                        <div className="project-progress-fill" style={ { width: progressPct + "%" } }></div>
-                    </div>
-                ) : (
-                    <select
-                        value={ commitment.status }
-                        onChange={ (e) => updateFrontmatter({ status: e.target.value }) }
-                    >
-                        <option value="not-started">not started</option>
-                        <option value="blocked">blocked</option>
-                        <option value="in-progress">in progress</option>
-                        <option value="suspended">suspended</option>
-                        <option value="done">done</option>
-                    </select>
-                ) }
-            </div>
+            {role === "commitment" && (
+                <div className="cell" ref={isProject ? tagRef : undefined}>
+                    { isProject ? (
+                        <div className="project-progress-bar">
+                            <div className="project-progress-fill" style={ { width: progressPct + "%" } }></div>
+                        </div>
+                    ) : (
+                        <select
+                            value={ commitment.status }
+                            onChange={ (e) => updateFrontmatter({ status: e.target.value }) }
+                        >
+                            <option value="not-started">not started</option>
+                            <option value="blocked">blocked</option>
+                            <option value="in-progress">in progress</option>
+                            <option value="suspended">suspended</option>
+                            <option value="done">done</option>
+                        </select>
+                    ) }
+                </div>
+            )}
 
             <div className="cell">
                 <select
@@ -203,28 +206,32 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                 />
             </div>
 
-            <div className="cell">
-                <input
-                    type="date"
-                    defaultValue={
-                        effective.start &&
-                        formatDate(effective.start)
-                    }
-                    onChange={ (e) => updateFrontmatter({ start: e.target.value }) }
-                />
-            </div>
+            {role === "commitment" && (
+                <div className="cell">
+                    <input
+                        type="date"
+                        defaultValue={
+                            effective.start &&
+                            formatDate(effective.start)
+                        }
+                        onChange={ (e) => updateFrontmatter({ start: e.target.value }) }
+                    />
+                </div>
+            )}
 
-            <div className="cell recurrences-cell">
-                { !isProject && (
-                    <span
-                        className="custom-inner-input"
-                        contentEditable
-                        suppressContentEditableWarning
-                    >
-                        { commitment.recurrences }
-                    </span>
-                ) }
-            </div>
+            {role === "commitment" && (
+                <div className="cell recurrences-cell">
+                    { !isProject && (
+                        <span
+                            className="custom-inner-input"
+                            contentEditable
+                            suppressContentEditableWarning
+                        >
+                            { commitment.recurrences }
+                        </span>
+                    ) }
+                </div>
+            )}
         </div>
     );
 }

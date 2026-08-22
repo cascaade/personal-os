@@ -22,11 +22,6 @@ export interface CommitmentTreeNode {
     effective: EffectiveFields;
 }
 
-export interface CommitmentTree {
-    roots: CommitmentTreeNode[];          // tasks + projects that have children
-    childlessProjects: CommitmentTreeNode[]; // projects with zero children — separate table
-}
-
 export interface ProjectResolver {
     getProject(commitment: Commitment): Commitment | undefined;
 }
@@ -44,7 +39,7 @@ const EMPTY_EFFECTIVE: EffectiveFields = { progress: { done: 0, total: 0 } };
 export function buildCommitmentTree(
     commitments: readonly Commitment[],
     resolver: ProjectResolver
-): CommitmentTree {
+): CommitmentTreeNode[] {
     const relevant = commitments.filter((c) => RELEVANT_ROLES.has(c.role ?? ""));
     const relevantByPath = new Map(relevant.map((c) => [c.file.path, c]));
 
@@ -153,16 +148,11 @@ export function buildCommitmentTree(
     attachEffectiveFields(allRoots);
 
     const roots: CommitmentTreeNode[] = [];
-    const childlessProjects: CommitmentTreeNode[] = [];
     for (const node of allRoots) {
-        if (node.commitment.role === "project" && node.children.length === 0) {
-            childlessProjects.push(node);
-        } else {
-            roots.push(node); // bare tasks (always childless) land here, at top level
-        }
+        roots.push(node);
     }
 
-    return { roots, childlessProjects };
+    return roots;
 }
 
 function attachEffectiveFields(topNodes: CommitmentTreeNode[]) {
@@ -288,7 +278,7 @@ export function sortTree(roots: CommitmentTreeNode[], newestFirst: boolean): Com
 // is preserved so context (which project it's under) doesn't get orphaned.
 export function filterTreeForView(
     nodes: CommitmentTreeNode[],
-    viewMode: "upcoming" | "past"
+    viewMode: "upcoming" | "past" | "goals"
 ): CommitmentTreeNode[] {
     const now = Date.now();
 
@@ -332,6 +322,17 @@ export function filterTreeForView(
     for (let i = order.length - 1; i >= 0; i--) {
         const { node, id, parentId } = order[i]!;
         const filteredChildren = (childrenById.get(id) ?? []).reverse();
+
+        if (viewMode === "goals") {
+            if ((node.commitment.role === "project" && filteredChildren.length === 0) || filteredChildren.length > 0) {
+                const filteredNode: CommitmentTreeNode = { ...node, children: filteredChildren };
+                const siblings = childrenById.get(parentId) ?? [];
+                siblings.push(filteredNode);
+                childrenById.set(parentId, siblings);
+            }
+
+            continue;
+        }
 
         if (matches(node) || filteredChildren.length > 0) {
             const filteredNode: CommitmentTreeNode = { ...node, children: filteredChildren };

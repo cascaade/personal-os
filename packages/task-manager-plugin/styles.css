@@ -309,14 +309,13 @@ h2 {
 
 .table {
     display: grid;
-    grid-template-columns: 2.4fr 0fr 0fr 0fr 0fr 1.6fr;
     padding: 0 var(--size-4-8) 0 var(--size-4-16);
     max-width: 100%;
     overflow-x: auto;
 
     --content-default-height: 1.4rem;
 
-    .header .cell {
+    .header-row .cell {
         .header-icon {
             padding: var(--size-4-1);
         }
@@ -336,7 +335,7 @@ h2 {
         /*}*/
     }
 
-    .header,
+    .header-row,
     .row {
         --background-color: var(--color-base-00);
         display: contents;
@@ -368,11 +367,11 @@ h2 {
             border-top: 1px solid var(--color-red);
             border-bottom: 1px solid var(--color-red);
 
-            &:first-of-type {
+            &:first-child {
                 border-left: 1px solid var(--color-red);
             }
 
-            &:last-of-type {
+            &:last-child {
                 border-right: 1px solid var(--color-red);
             }
         }
@@ -386,6 +385,12 @@ h2 {
 
     .row:hover {
         --background-color: var(--color-base-05);
+    }
+
+    .row .cell, .header-row .cell {
+        &:last-child {
+            border-right: none;
+        }
     }
 
     .cell {
@@ -405,24 +410,14 @@ h2 {
         .custom-inner-input {
             display: block;
             min-width: 0;
-            width: 500px;
+            width: fit-content;
+            max-width: 500px;
             white-space: nowrap;
             overflow: hidden;
             border-right: var(--m-right) solid transparent;
             cursor: text;
             flex-grow: 1;
             line-height: calc(var(--content-default-height) + 2 * var(--size-4-2));
-        }
-
-        &:nth-child(6) {
-            border-right: none;
-        }
-
-        &.recurrences-cell {
-            border-right: none;
-            min-width: 150px;
-            padding: 0 0 0 var(--size-4-3);
-            align-items: stretch;
         }
 
         &.title-cell {
@@ -461,6 +456,32 @@ h2 {
             border-radius: var(--input-radius);
             corner-shape: var(--input-corner-shape);
             outline: none;
+        }
+    }
+}
+
+.goals-table {
+    grid-template-columns: 2.4fr 0fr 0fr;
+    padding-bottom: var(--size-4-8);
+
+    max-width: calc(var(--file-line-width) + var(--size-4-8) + var(--size-4-16));
+    transform: translateX(calc(-1 * var(--size-4-4))); /* [(4-16) - (4-8)] / 2 */
+    margin: auto;
+
+    .title-cell .custom-inner-input {
+        width: 0;
+    }
+}
+
+.commitments-table {
+    grid-template-columns: 2.4fr 0fr 0fr 0fr 0fr 1.6fr;
+
+    .cell {
+        &.recurrences-cell {
+            border-right: none;
+            min-width: 150px;
+            padding: 0 0 0 var(--size-4-3);
+            align-items: stretch;
         }
     }
 }
