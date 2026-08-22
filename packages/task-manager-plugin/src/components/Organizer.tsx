@@ -27,15 +27,27 @@ export default function Organizer({ commitments }: OrganizerProps) {
     const { ctx } = useContext(ObsidianContext)!;
     const [viewMode, setViewMode] = useState<ViewMode>("upcoming");
 
-    const { roots, goalRoots } = useMemo(() => {
-        const roots = buildCommitmentTree(commitments, ctx.commitments);
+    const { roots, goalRoots, commitmentCount } = useMemo(() => {
+        const { roots, commCount } = buildCommitmentTree(commitments, ctx.commitments);
+
         const newestFirst = viewMode === "past";
 
-        console.warn(roots);
+        const filtered = viewMode === "all"
+            ? { roots, count: 0 }
+            : filterTreeForView(roots, viewMode);
+
+        const goals = filterTreeForView(roots, "goals");
 
         return {
-            roots: viewMode === "all" ? sortTree(roots, true) : sortTree(filterTreeForView(roots, viewMode), newestFirst),
-            goalRoots: sortTree(filterTreeForView(roots, "goals"), true),
+            roots: viewMode === "all"
+                ? sortTree(roots, true)
+                : sortTree(filtered.roots, newestFirst),
+
+            goalRoots: sortTree(goals.roots, true),
+
+            commitmentCount: viewMode === "all"
+                ? commCount
+                : filtered.count,
         };
     }, [commitments, ctx.commitments, viewMode]);
 
@@ -69,7 +81,7 @@ export default function Organizer({ commitments }: OrganizerProps) {
         </div>
 
         <div className="commitments-table-header table-header">
-            <h2>{ viewMode == "upcoming" ? "Upcoming" : "Past" } Tasks ({roots.length})</h2>
+            <h2>{ viewMode.charAt(0).toUpperCase() + viewMode.substring(1) } Tasks ({commitmentCount})</h2>
             <div className="tm-toggle">
                 <button className={viewMode === "upcoming" ? "active" : ""} onClick={() => setViewMode("upcoming")}>
                     <ListTodo className="header-icon" /> Upcoming

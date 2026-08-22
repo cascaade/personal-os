@@ -15,6 +15,11 @@ export interface EffectiveFields {
     status?: string; // own value if set, else inferred from children
 }
 
+export interface CommitmentTree {
+    roots: CommitmentTreeNode[];
+    commCount: number;
+}
+
 export interface CommitmentTreeNode {
     commitment: Commitment;
     children: CommitmentTreeNode[];
@@ -40,7 +45,7 @@ const EMPTY_EFFECTIVE: EffectiveFields = { progress: { inProgress: 0, done: 0, t
 export function buildCommitmentTree(
     commitments: readonly Commitment[],
     resolver: ProjectResolver
-): CommitmentTreeNode[] {
+): CommitmentTree {
     const relevant = commitments.filter((c) => RELEVANT_ROLES.has(c.role ?? ""));
     const relevantByPath = new Map(relevant.map((c) => [c.file.path, c]));
 
@@ -153,7 +158,7 @@ export function buildCommitmentTree(
         roots.push(node);
     }
 
-    return roots;
+    return { roots, commCount: relevant.filter((c) => c.role !== "project").length };
 }
 
 function attachEffectiveFields(topNodes: CommitmentTreeNode[]) {
@@ -283,23 +288,28 @@ export function sortTree(roots: CommitmentTreeNode[], newestFirst: boolean): Com
 export function filterTreeForView(
     nodes: CommitmentTreeNode[],
     viewMode: "upcoming" | "past" | "goals"
-): CommitmentTreeNode[] {
+): { roots: CommitmentTreeNode[]; count: number } {
     const now = Date.now();
+    const today = Math.floor(now / (1000 * 60 * 60 * 24));
 
     const matches = (node: CommitmentTreeNode): boolean => {
         if (node.commitment.role === "project") return false;
 
         const due = node.effective.due?.getTime();
+        const dueDay = Math.floor((due ?? 0) / (1000 * 60 * 60 * 24));
+
         if (viewMode === "upcoming") {
-            return due == null || due >= now || node.overdue;
+            return due == null || dueDay >= today || node.overdue;
         }
-        return due != null && due < now && !node.overdue;
+        return due != null && dueDay < today && !node.overdue;
     };
 
     //~~ filter list ~~//
 
     type StackItem = { node: CommitmentTreeNode; parentId: number };
     const ROOT = -1;
+
+    let commCount = 0;
 
     // 1. Iterative traversal, assigning each node a numeric id.
     //    Push children in reverse so they pop in original order.
@@ -341,10 +351,16 @@ export function filterTreeForView(
         if (matches(node) || filteredChildren.length > 0) {
             const filteredNode: CommitmentTreeNode = { ...node, children: filteredChildren };
             const siblings = childrenById.get(parentId) ?? [];
+
+            if (filteredChildren.length === 0) commCount++;
+
             siblings.push(filteredNode);
             childrenById.set(parentId, siblings);
         }
     }
 
-    return (childrenById.get(ROOT) ?? []).reverse();
+    return {
+        roots: ( childrenById.get(ROOT) ?? [] ).reverse(),
+        count: commCount,
+    };
 }

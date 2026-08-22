@@ -29,7 +29,7 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
         setEditing(true);
     };
 
-    const finishEditing = () => {
+    const finishEditing = (text: string) => {
         if (cancelled.current) {
             cancelled.current = false;
             setEditing(false);
@@ -38,8 +38,8 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
 
         setEditing(false);
 
-        if (editValue !== commitment.title) {
-            void ctx.commitments.changeCommitmentTitle(commitment, editValue);
+        if (text && text !== commitment.title) {
+            void ctx.commitments.changeCommitmentTitle(commitment, text);
         }
     };
 
@@ -127,13 +127,13 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                                 selection?.addRange(range);
                             }
                         }}
-                        onInput={(e) => {
-                            setEditValue(e.currentTarget.textContent ?? "");
-                        }}
+                        // onInput={(e) => {
+                        //     setEditValue(e.currentTarget.textContent ?? "");
+                        // }}
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
                                 e.preventDefault();
-                                finishEditing();
+                                finishEditing(e.currentTarget.textContent ?? "");
                             } else if (e.key === "Escape") {
                                 e.preventDefault();
                                 cancelEditing();
@@ -147,7 +147,9 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                                 return;
                             }
                         }}
-                        onBlur={finishEditing}
+                        onBlur={(e) => {
+                            finishEditing(e.currentTarget.textContent ?? "");
+                        }}
                     />
                 ) : (
                     <a
@@ -222,7 +224,7 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                         effective.due &&
                         formatDate(effective.due)
                     }
-                    onChange={ (e) => updateFrontmatter({ due: e.target.value }) }
+                    onBlur={ (e) => updateFrontmatter({ due: e.target.value }) }
                 />
             </div>
 
@@ -234,7 +236,7 @@ export function CommitmentRow({ commitment, depth, error, overdue, isProject, ef
                             effective.start &&
                             formatDate(effective.start)
                         }
-                        onChange={ (e) => updateFrontmatter({ start: e.target.value }) }
+                        onBlur={ (e) => updateFrontmatter({ start: e.target.value }) }
                     />
                 </div>
             )}

@@ -582,8 +582,19 @@ export class CommitmentsProvider {
         });
     }
 
-    public async changeCommitmentTitle(commitment: Commitment, newTitle: string) {
+    public async changeCommitmentTitle(
+        commitment: Commitment,
+        newTitle: string
+    ) {
+        const file = commitment.file;
+        const safeTitle = newTitle.replaceAll("/", "-");
 
+        const parentPath = file.parent?.path ?? "";
+        const newPath = parentPath
+            ? `${parentPath}/${safeTitle}.${file.extension}`
+            : `${safeTitle}.${file.extension}`;
+
+        await this.ctx.obsidian.getApp().fileManager.renameFile(file, newPath);
     }
 
     subscribe(key: string, listener: () => void) {
