@@ -1,11 +1,21 @@
-import { CalendarClock, CalendarPlus, CircleCheck, FileText, Flag, Repeat, History, ListTodo } from "lucide-react";
+import {
+    CalendarClock,
+    CalendarPlus,
+    CircleCheck,
+    FileText,
+    Flag,
+    Repeat,
+    History,
+    ListTodo,
+    Logs
+} from "lucide-react";
 import { Commitment } from "@personal-os/obsidian/dist/services/CommitmentsProvider";
 import { Fragment, useContext, useMemo, useState } from "react";
 import { ObsidianContext } from "@/context/ObsidianContext";
 import { CommitmentRow } from "@/components/CommitmentRow";
 import { buildCommitmentTree, CommitmentTreeNode, filterTreeForView, sortTree } from "@/utils/commitment-tree";
 
-type ViewMode = "upcoming" | "past";
+type ViewMode = "upcoming" | "past" | "all";
 
 interface OrganizerProps {
     commitments: readonly Commitment[];
@@ -22,7 +32,7 @@ export default function Organizer({ commitments }: OrganizerProps) {
         console.warn(roots);
 
         return {
-            roots: sortTree(filterTreeForView(roots, viewMode), newestFirst),
+            roots: viewMode === "all" ? sortTree(roots, true) : sortTree(filterTreeForView(roots, viewMode), newestFirst),
             goalRoots: sortTree(filterTreeForView(roots, "goals"), true),
         };
     }, [commitments, ctx.commitments, viewMode]);
@@ -64,6 +74,9 @@ export default function Organizer({ commitments }: OrganizerProps) {
                 </button>
                 <button className={viewMode === "past" ? "active" : ""} onClick={() => setViewMode("past")}>
                     <History className="header-icon" /> Past
+                </button>
+                <button className={viewMode === "all" ? "active" : ""} onClick={() => setViewMode("all")}>
+                    <Logs className="header-icon" /> All
                 </button>
             </div>
         </div>
